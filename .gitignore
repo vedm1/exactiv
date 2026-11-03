@@ -1,0 +1,5 @@
+PHASES_DASHBOARD.html
+.env
+.venv/
+node_modules/
+__pycache__/
