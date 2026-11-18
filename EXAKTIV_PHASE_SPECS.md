@@ -130,7 +130,94 @@ Reviewer UI, HTML reports, PDFs and the website use the Exaktiv brand package in
 
 **Objective**: Run the stack on a Hetzner Germany server for ≤ $10 per month.
 **Prerequisites**: EXK0 ✅; open items "secrets mechanism", "stack RAM", "EU-only engineering access".
-**Rough scope**: Server, firewall, compose deploy, secrets store, Postgres backups with one tested restore, cost record.
+**Rough scope (superseded by the detailed spec below)**: Server, firewall, compose deploy, secrets store, Postgres backups with one tested restore, cost record.
+
+### EXK0b detailed implementation spec (DRAFT, waits for approval, 18 Nov 2026)
+
+**Decisions taken in the session**: one combined slice (CircleCI port + server + deploy). CircleCI replaces GitHub Actions. Secrets: Doppler + one CircleCI context variable. The server is shared (Nuremberg, `eu-central nbg1`, Ubuntu 24.04, 4 vCPU, 7.7 GB RAM, about 5 GB available) with unveilio, foundry, wevit and observability. A new script `deploy-infra` carries the Exaktiv data stack; the shared `/opt/stack/bin/deploy` stays untouched (its policy forbids volumes, published ports and third-party images). **Postgres is on Neon, Frankfurt (`aws-eu-central-1`)**, not on the server. The Temporal database decision is parked for the Temporal phase.
+
+**Changes against the phase list**: (1) no Postgres container and no Postgres backups on the server; Neon point-in-time restore replaces them, with one tested restore. (2) Temporal is not deployed here. The server stack of this phase is MinIO only. (3) The CLAUDE.md "Datastore" row must say "PostgreSQL 16+ (Neon Frankfurt for EU; local Docker for development)". (4) Neon is a new processor: DPA, sub-processor list and the privacy notice recipients (PRD-W §8.3) need updates. (5) No application image exists yet (no Dockerfiles); app deploys come with EXK1 and EXW2.
+
+**Probed on the server (read-only, 18 Nov 2026)**: `/opt/stack/<project>` per project; shared Caddy on 80/443; Docker network `edge`; ufw allows 22 only (Docker-published ports bypass ufw, so bind to `127.0.0.1`); `bin/deploy <project>` is an SSH forced command (a CircleCI key can only deploy a 40-character SHA); per-project users exist (`dossura-deploy`, `/opt/dossura/doppler.env`); Doppler is already used; no Doppler CLI on the host; Docker log rotation set; no backup jobs. The existing pattern in `productManager/.circleci/config.yml` is reused: one context variable `DOPPLER_TOKEN`, `load-doppler`, `APPS_HOST`/`APPS_KNOWN_HOSTS` from Doppler.
+
+#### 1. Files (repository)
+
+| Path | Content |
+|---|---|
+| `.circleci/config.yml` | Port of every job in `.github/workflows/ci.yml`: `python`, `ui`, `site`, `secrets`, `integration`, plus `deploy-infra` (main only, after all others). Keeps the planted-key and planted-hex checks. |
+| `.github/workflows/ci.yml` | Deleted in the same change (one CI only). |
+| `deploy/server/docker-compose.yml` | Server stack: MinIO only (Chainguard image pinned by digest, as in `deploy/docker-compose.yml`), port `127.0.0.1:9000`, one named volume, a healthcheck, project network `exaktiv`. |
+| `deploy/server/deploy-infra` | Root-owned script on the server (installed by hand from a reviewed commit, never run from the deployed repository). Forced command; input is a 40-character SHA. |
+| `deploy/server/policy.py` | Compose policy check used by `deploy-infra` (stdlib only, reads `docker compose config --format json`). |
+| `deploy/server/setup.sh` | Idempotent root setup: user `exaktiv-deploy`, `/opt/stack/exaktiv`, read-only GitHub deploy key, forced-command line in `authorized_keys`, install of `deploy-infra` and `policy.py`. Prints what it changed. Dry-run flag. |
+| `deploy/server/README.md` | Runbook: one-time setup, deploy, rollback, Neon restore test, cost record. |
+| `deploy/known_hosts` | Public SSH host key of the server (pinned; no `ssh-keyscan` at deploy time). |
+| `libs/core/exaktiv_core/db.py` and `settings.py` | New setting `postgres_ssl: bool = False`; helper `connect_kwargs()` returns `{"ssl": "require"}` when true. Used by `health.py`, `smoke.py`, `PgStore` and `migrations/env.py` (`connect_args`). Neon needs TLS. |
+| `tests/unit/test_deploy_policy.py`, `test_circleci_config.py`, `test_db_ssl.py` | See section 6. |
+
+#### 2. `deploy-infra` algorithm (policy-first, nothing from the repository is executed)
+
+1. Input: `SSH_ORIGINAL_COMMAND` must match `^[0-9a-f]{40}$`, else exit 2.
+2. `flock` on `/opt/stack/exaktiv/.deploy.lock`.
+3. `git fetch` the branch `main` from `git@github.com:vedm1/exactiv.git` with the read-only deploy key and the pinned GitHub host key (fingerprint checked, as `init-deploy-source` does).
+4. Refuse a SHA that is not an ancestor of `origin/main`.
+5. Write `deploy/server/docker-compose.yml` from that SHA to a temp file, atomic rename.
+6. Run `docker compose config --format json | python3 /opt/stack/bin/exaktiv-policy.py`; any violation stops before a pull.
+7. Fetch secrets from Doppler (service token in `/opt/stack/exaktiv/doppler.token`, mode 600) into `/opt/stack/exaktiv/.env` (mode 600). Secrets never print. The Doppler config holds `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY`.
+8. `docker compose pull`, then `up -d --wait --wait-timeout 300`.
+9. On success write the SHA to `.current`. On failure bring the previous SHA back up and exit 1.
+
+**Policy (`policy.py`)**: every image is pinned by `@sha256:`; no `privileged`, `pid`, `ipc`, `network_mode`, `userns_mode`, `devices`, `sysctls`, `build`, `env_file`, `secrets`, `configs`; no `cap_add`; no root `user`; volumes only as named volumes of this project (no bind mounts, no host paths, no docker socket); ports only with host IP `127.0.0.1`; networks only the project network, never `edge`; each service has a healthcheck and a memory limit (`mem_limit`, at most 1 GB for MinIO).
+
+#### 3. CircleCI pipeline
+
+- Jobs map one to one from `ci.yml`: `python` (docker executor `cimg/python:3.12`, uv, ruff, format check, mypy, fixture check, licence check, unit/guardrail/site tests), `ui` (node 24 + pnpm, lint, typecheck, test, brand checks, planted hex, build, no-external, licence check), `site` (build gates, Playwright browser checks, pinned Lighthouse), `secrets` (gitleaks pinned with checksum, planted key must fail, secret-scan test), `integration` (machine executor, `scripts/make_env.sh`, compose up, `pytest -m integration`, logs on failure, `down -v`).
+- Commands for repeated steps: `load-doppler` (as in `productManager`).
+- `deploy-infra` job: `add_ssh_keys` with the fingerprint from Doppler `ci`, host key from `deploy/known_hosts`, then `ssh exaktiv-deploy@$APPS_HOST "$CIRCLE_SHA1"`. Filter: branch `main`, `requires` all other jobs. A no-op with a clear message if `APPS_HOST` is unset.
+- The CircleCI context `exaktiv-production` holds one variable: `DOPPLER_TOKEN` (service token for the Doppler `ci` config). Doppler `ci` holds `APPS_HOST`, `DEPLOY_SSH_FINGERPRINT`.
+- Validate with `circleci config validate` before merge.
+
+#### 4. Server setup (done once, by me over SSH as root, after the plan is approved)
+
+Create user `exaktiv-deploy` (docker group; note: docker group is root-equivalent, so the forced command and the policy are the control). Create `/opt/stack/exaktiv` (owner `exaktiv-deploy`, 750). Generate a new ed25519 deploy key pair for CircleCI **on this machine** (`~/vultr-keys/circleci-exaktiv`), install only the public key with the forced command `command="/opt/stack/bin/deploy-infra",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding` in `/home/exaktiv-deploy/.ssh/authorized_keys`. The key `vultr-unveilio` is used only for this one-time root setup. No change to Caddy, to `bin/deploy` or to another project's files or containers.
+
+**Steps only the user can do** (secrets): create the Doppler project and a `ci` and a `prd` config with the values above; put the Doppler service token for `prd` into `/opt/stack/exaktiv/doppler.token` on the server (I give the one-line command, the user runs it); add `DOPPLER_TOKEN` to the CircleCI context; add the private key `circleci-exaktiv` to the CircleCI project (Additional SSH Keys); link the GitHub repository in CircleCI after the first push; create the Neon project in Frankfurt and the Neon DPA.
+
+#### 5. Neon (not deployed by this phase, prepared by it)
+
+`POSTGRES_HOST` (direct endpoint, not the pooler, for migrations and advisory locks), `POSTGRES_PORT=5432`, `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `POSTGRES_SSL=true` live in Doppler. If the pooler is used later, asyncpg needs `statement_cache_size=0`. The first live connection to Neon is **not tested in this phase** (no credentials here): it is the user's smoke test with `uv run python -c` on the health check once the Doppler values exist. Restore test: create a Neon branch from a point in time, check a known row, delete the branch; record the date in the runbook.
+
+#### 6. Test plan (TDD, failing first)
+
+| Test | Asserts |
+|---|---|
+| `test_policy_accepts_the_real_server_compose` | `deploy/server/docker-compose.yml` has no violation |
+| `test_policy_rejects_*` (parametrised) | privileged; bind mount; docker socket; port without `127.0.0.1`; `0.0.0.0` port; image without digest; `network_mode: host`; `cap_add`; `env_file`; root user; network `edge`; missing healthcheck; missing memory limit; `build` |
+| `test_policy_reports_all_violations` | two bad services give two messages |
+| `test_deploy_infra_rejects_non_sha_input` | runs the script in a temp dir with a fake `docker` and `git`: `"; rm -rf /"`, short SHA, uppercase give exit 2 and no command runs |
+| `test_deploy_infra_never_prints_secrets` | fake Doppler answer with a sentinel; output has none |
+| `test_circleci_config_has_every_ci_job` | each former Actions job exists; `deploy-infra` requires all and filters to `main`; no job uses an unpinned remote script |
+| `test_circleci_config_has_planted_checks` | planted key and planted hex steps present |
+| `test_g9_no_secret_values_in_circleci_or_deploy_files` | gitleaks config passes; no token pattern |
+| `test_db_ssl_kwargs` | `postgres_ssl=True` gives `{"ssl": "require"}`; default gives `{}`; `repr(settings)` hides the password |
+| `test_ci_yml_removed` | `.github/workflows/ci.yml` does not exist |
+
+Existing tests stay green. `circleci config validate` runs on the file. `setup.sh --dry-run` output is checked on the server before the real run.
+
+#### 7. Verify and close
+
+`uv run pytest`, ruff, mypy, `circleci config validate`, `bash -n` and `shellcheck` on the scripts. Independent subagent review (server access, G9, policy bypass). On the server after setup: `ssh -i circleci-exaktiv` with a valid SHA deploys MinIO; a bad input is refused; the key cannot get a shell; `docker ps` shows the other projects unchanged (same container IDs and uptime as before). Docs: `PHASES.md` row, build plan (secrets mechanism resolved = Doppler; MinIO licence; new open items: Neon DPA and sub-processor, Doppler workplace region, EU-only access, Temporal DB, off-box copy not needed for Postgres but needed for MinIO data), CLAUDE.md Datastore row, a cost record (server share, Neon plan).
+
+**Cost**: the server is shared, so the marginal cost is zero. Neon plan cost counts next to it against the $10 limit; the user states the plan.
+
+#### Implementation notes (EXK0b, 18 Nov 2026)
+
+- **CircleCI context** is `exaktiv_deploy` (the spec text above said `exaktiv-production`). The Doppler token is in it already.
+- **Independent review found 3 critical gaps in the first policy draft; all fixed before any deploy ran**: (1) a volume with `driver_opts` could bind-mount the host root, and volume or network names of another project were not checked; (2) the project name was not pinned, so `name: wevit` could recreate another project's containers; (3) the policy checked uninterpolated text while `up` ran the interpolated one, and Doppler keys such as `COMPOSE_FILE` could steer docker. Now: allowlist policy, project name and `-p exaktiv` pinned, check on the interpolated config with all profiles, `.env` reduced to two keys (single-quoted), the `COMPOSE_*` and `DOCKER_*` variables of the caller unset, only `${MINIO_ACCESS_KEY}` and `${MINIO_SECRET_KEY}` allowed as variables, registry limited to `cgr.dev/chainguard/`.
+- **Other review fixes**: a deploy of a commit older than the live one is refused; `pull` runs before the switch and the old files are restored on any failure; the secrets go to a temporary file first; `flock -w 600`; `deploy.conf` moved to root-owned `/etc/exaktiv/` and its values are shape-checked (no option injection); the Doppler CLI is pinned (3.75.3) with a checksum; `setup.sh` refuses a key file of more than one line; `docker image prune` removed (it would prune other projects' unused images on the shared host).
+- **Residual risk (user steps)**: the CircleCI context must be restricted to `main` in the CircleCI settings, and `main` must be protected in GitHub. Docker group membership is root-equivalent, so the forced command plus the policy are the whole control.
+- **DATABASE_URL (added 18 Nov 2026)**: `PostgresSettings` accepts `DATABASE_URL` (Neon) and splits it into the `POSTGRES_*` parts; its `sslmode` sets TLS (`require`, `verify-ca`, `verify-full`; `disable`, `allow` and `prefer` mean no TLS). It wins over `POSTGRES_*`; a blank value is ignored. Validation errors hide the input, so the URL never prints. `dsn()` now percent-encodes user and password. **Pooled host only (decision 18 Nov 2026)**: a host with `-pooler.` (or `POSTGRES_POOLED=true`) turns the asyncpg statement cache off (`statement_cache_size=0`), and Alembic gets `prepared_statement_cache_size=0` plus unique prepared-statement names, because PgBouncer in transaction mode keeps no session state. The rate limit uses a transaction-level advisory lock, which works in that mode. Session-level features (`LISTEN`, session locks, `SET`) must not be used. **Probed 18 Nov 2026 against a throwaway PgBouncer 1.26.1 (transaction mode, scram) in front of Postgres 16.4**: `alembic upgrade head`, `downgrade base` and `upgrade head` again all ran; the site form store gave the sixth refusal, exactly 5 accepted out of 20 concurrent calls (the advisory lock holds), insert, pending mail and the two jobs' queries worked. With the statement cache on, 30 rounds also worked on this PgBouncer version, so the cache-off setting is a safe default for older poolers, not a proven need. **Not verified against Neon itself.** Probe containers and network were removed. Tests: `tests/unit/test_db_url.py`.
+- **Not tested here**: a live deploy (needs the GitHub deploy key and the Doppler token on the server), the live Neon connection, the real MinIO start with `user: 65532` on a fresh named volume on the host, and CircleCI itself (the config only passes `circleci config validate`).
 
 ## EXK0c — India host
 

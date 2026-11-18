@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Exaktiv data-stack deploy (EXK0b). Runs ONLY as an SSH forced command:
+#   command="/opt/stack/bin/deploy-infra",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 ...
+# The key can do one thing: deploy a 40-character git SHA that is in the history of main and is not older than
+# the live one. Installed by root (deploy/server/setup.sh). Nothing from the deployed repository is executed:
+# only its docker-compose.yml is read, and only after policy.py accepts the INTERPOLATED config.
+set -euo pipefail
+STACK="${STACK_ROOT:-/opt/stack}"
+CONF="${DEPLOY_CONF:-/etc/exaktiv/deploy.conf}"
+PROJECT=exaktiv
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+POLICY="${POLICY_PY:-$HERE/exaktiv-policy.py}"
+API="${DOPPLER_API_HOST:-https://api.doppler.com}"
+sha="${SSH_ORIGINAL_COMMAND:-}"
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "usage: ssh exaktiv-deploy@host <40-char git sha>" >&2; exit 2; }
+die() { echo "$PROJECT: refused: $*" >&2; exit 1; }
+
+# Nothing from the caller's environment may steer docker compose.
+for v in $(compgen -v | grep -E '^(COMPOSE_|DOCKER_)' || true); do unset "$v"; done
+
+cd "$STACK/$PROJECT"
+exec 9>.deploy.lock
+flock -w 600 9 || die "another deploy is running"
+prev="$(cat .current 2>/dev/null || true)"
+
+# 1. deploy.conf (root-owned): only these keys, only these shapes
+REPO=""; BRANCH=main; SSH_KEY=""; KNOWN_HOSTS=""
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ "$line" =~ ^[[:space:]]*# || -z "${line//[[:space:]]/}" ]] && continue
+  if [[ "$line" =~ ^(REPO|BRANCH|SSH_KEY|KNOWN_HOSTS)=([^[:space:]]*)$ ]]; then
+    printf -v "${BASH_REMATCH[1]}" '%s' "${BASH_REMATCH[2]}"
+  else
+    die "deploy.conf has a line this script does not accept"
+  fi
+done < "$CONF"
+[[ "$REPO" =~ ^git@github\.com:[A-Za-z0-9._-]+/[A-Za-z0-9._-]+\.git$ ]] || die "deploy.conf: REPO has an unexpected shape"
+[[ "$BRANCH" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] || die "deploy.conf: BRANCH has an unexpected shape"
+[[ "$SSH_KEY" =~ ^/[A-Za-z0-9._/-]+$ && "$KNOWN_HOSTS" =~ ^/[A-Za-z0-9._/-]+$ ]] || die "deploy.conf: a path has an unexpected shape"
+
+# 2. the commit: in the history of main, and not older than the live one
+repo_dir=.repo.git
+[[ -d "$repo_dir" ]] || git init -q --bare "$repo_dir"
+export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS"
+git --git-dir="$repo_dir" fetch -q --no-tags --force -- "$REPO" "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" \
+  || die "could not fetch $BRANCH from the repository"
+if ! git --git-dir="$repo_dir" cat-file -e "${sha}^{commit}" 2>/dev/null \
+   || ! git --git-dir="$repo_dir" merge-base --is-ancestor "$sha" "refs/remotes/origin/$BRANCH"; then
+  die "commit $sha is not in $BRANCH's history"
+fi
+if [[ -n "$prev" ]] && ! git --git-dir="$repo_dir" merge-base --is-ancestor "$prev" "$sha"; then
+  die "commit $sha is older than the live commit $prev"
+fi
+
+# 3. the compose file and the secrets, both into temporary files. Nothing live changes yet.
+new="$(mktemp ./.docker-compose.yml.XXXXXX)"
+umask 077
+env_new="$(mktemp ./.env.XXXXXX)"
+trap 'rm -f "$new" "$env_new"' EXIT
+umask 022
+git --git-dir="$repo_dir" show "$sha:deploy/server/docker-compose.yml" >"$new" 2>/dev/null \
+  || die "deploy/server/docker-compose.yml does not exist at $sha"
+python3 "$POLICY" --raw "$new" || die "policy: the compose file text was refused"
+
+token="$(cat doppler.token)"
+[[ "$token" =~ ^[A-Za-z0-9._-]+$ ]] || die "the Doppler token file has an unexpected shape"
+secrets="$(printf 'user = "%s:"\n' "$token" \
+  | curl -fsS --max-time 20 -K - "$API/v3/configs/config/secrets/download?format=json")" \
+  || die "could not read the secrets from Doppler"
+# Only the two allowed keys survive, single-quoted. Other Doppler keys never reach docker compose.
+printf '%s' "$secrets" | python3 "$POLICY" --env >"$env_new" || die "policy: the Doppler secrets were refused"
+unset secrets token
+
+# 4. the policy runs on the interpolated config: what is checked is what runs
+compose_with() { docker compose -f "$1" -p "$PROJECT" --profile '*' --env-file "$2" "${@:3}"; }
+compose_with "$new" "$env_new" config --format json | python3 "$POLICY" \
+  || die "policy: the compose file was refused"
+
+# 5. pull first (the live files are still in place), then switch, then start
+compose_with "$new" "$env_new" pull || die "pull failed; nothing changed"
+[[ -f docker-compose.yml ]] && cp -f docker-compose.yml docker-compose.prev.yml
+[[ -f .env ]] && cp -f .env .env.prev
+chmod 644 "$new"; mv -f "$new" docker-compose.yml
+chmod 600 "$env_new"; mv -f "$env_new" .env
+if compose_with docker-compose.yml .env up -d --wait --wait-timeout 300; then
+  echo "$sha" > .current
+  echo "$PROJECT: $sha is live"
+else
+  echo "$PROJECT: $sha failed its health checks" >&2
+  if [[ -n "$prev" && -f docker-compose.prev.yml && -f .env.prev ]]; then
+    cp -f docker-compose.prev.yml docker-compose.yml
+    cp -f .env.prev .env
+    compose_with docker-compose.yml .env up -d --wait --wait-timeout 300 && echo "$PROJECT: rolled back to $prev" >&2
+  fi
+  exit 1
+fi

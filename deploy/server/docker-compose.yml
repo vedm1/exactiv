@@ -1,0 +1,28 @@
+# Exaktiv server stack (EXK0b). Deployed only by deploy-infra, which checks deploy/server/policy.py first.
+# Postgres is on Neon (Frankfurt), not here. Temporal is added in its own phase.
+# Secrets MINIO_ACCESS_KEY and MINIO_SECRET_KEY come from Doppler (written to .env by deploy-infra).
+name: exaktiv
+
+services:
+  minio:
+    # The official MinIO image is no longer public. Chainguard builds it; the digest pins it (same as deploy/docker-compose.yml).
+    image: cgr.dev/chainguard/minio:latest@sha256:3c60a2a8c4d33409a9bc7a623a7fcbfb4605adc3d89422d2f53b3f673a6e5597
+    command: server /data
+    user: "65532"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set in Doppler}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set in Doppler}
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - miniodata:/data
+    mem_limit: 1g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  miniodata:

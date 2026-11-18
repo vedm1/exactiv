@@ -23,7 +23,7 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 | Workflows | Temporal (Python SDK). No Kafka in v1. |
 | Model gateway | LiteLLM, image pinned by digest. Never a floating tag. |
 | Fine-tuning | PEFT/LoRA on an Apache 2.0 or MIT base model only. |
-| Datastore | PostgreSQL 16. Object storage: S3-compatible (MinIO locally). |
+| Datastore | PostgreSQL 16+ (Neon Frankfurt for EU; local Docker for development). Object storage: S3-compatible (MinIO locally and on the EU server). |
 | UI | React + TypeScript, Exaktiv brand package tokens and components (`brand/`, phases EXD1 to EXD5). |
 | Hosting | Local docker-compose first. EU: Hetzner Germany (EXK0b). India: provider to choose (EXK0c). **Server cost limit: $10 per month per region.** Model API and GPU costs are tracked separately. |
 | Commands | Python: `uv run pytest`, `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`. UI: `pnpm test`, `pnpm lint`, `pnpm typecheck`. Stack: `docker compose up -d`. |

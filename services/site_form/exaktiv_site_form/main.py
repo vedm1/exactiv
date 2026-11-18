@@ -169,7 +169,7 @@ def create_default_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        await store.open(settings.dsn())
+        await store.open(settings.dsn(), **settings.connect_kwargs())
         try:
             yield
         finally:

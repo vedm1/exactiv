@@ -31,7 +31,7 @@ async def run_job(name: str, store: Store, mailer: Mailer, settings: SiteFormSet
 async def _main(name: str) -> None:
     settings = SiteFormSettings()  # type: ignore[call-arg]
     store = PgStore()
-    await store.open(settings.dsn())
+    await store.open(settings.dsn(), **settings.connect_kwargs())
     mailer = BrevoMailer(
         settings.brevo_api_key.get_secret_value(),
         settings.mail_sender_email,

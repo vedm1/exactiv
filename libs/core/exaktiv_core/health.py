@@ -35,6 +35,7 @@ async def _check_postgres(s: Settings) -> None:
         user=s.postgres_user,
         password=s.postgres_password.get_secret_value(),
         timeout=CHECK_TIMEOUT_S,
+        **s.connect_kwargs(),
     )
     try:
         await conn.fetchval("SELECT 1")

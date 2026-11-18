@@ -36,6 +36,7 @@ async def write_row(run_id: str) -> bool:
         database=s.postgres_db,
         user=s.postgres_user,
         password=s.postgres_password.get_secret_value(),
+        **s.connect_kwargs(),
     )
     try:
         await conn.execute(CREATE_SQL)

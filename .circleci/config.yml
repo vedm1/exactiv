@@ -1,0 +1,227 @@
+# Exaktiv CI and deploy (EXK0b). Replaces .github/workflows/ci.yml: every job is ported one to one.
+#
+# Flow: python, ui, site, secrets and integration run on every push and pull request.
+# On main, after all five pass, deploy-infra deploys the server stack (MinIO) to the Hetzner EU host.
+#
+# Secrets: the CircleCI context `exaktiv_deploy` holds ONE variable, DOPPLER_TOKEN (service token of the
+# Doppler `ci` config). The deploy job reads everything else from Doppler `ci`:
+#   APPS_HOST   the server address. It must be the address in deploy/known_hosts.
+# The deploy key (private half of circleci-exaktiv) is added in CircleCI: Project Settings, SSH Keys,
+# Additional SSH Keys, hostname = the server address. CircleCI must show the fingerprint set below.
+# The server side (forced command deploy-infra, policy, Doppler token) is in deploy/server/README.md.
+# IMPORTANT (CircleCI settings, not in this file): restrict the context exaktiv_deploy to the main branch
+# (context restriction by expression: pipeline.git.branch == "main"), and keep "Pass secrets to builds from
+# forked pull requests" OFF. A branch can edit this file, so the context itself must refuse other branches.
+version: 2.1
+
+commands:
+  install-uv:
+    steps:
+      - run:
+          name: Install uv (pinned)
+          command: |
+            curl -LsSf https://astral.sh/uv/0.12.7/install.sh | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+  install-pnpm:
+    steps:
+      - run:
+          name: Install pnpm (pinned)
+          command: sudo npm install -g pnpm@11.8.0
+  load-doppler:
+    # JSON plus jq @sh single-quotes each value, so a secret cannot be re-interpreted by the shell.
+    steps:
+      - run:
+          name: Load CI secrets from Doppler
+          command: |
+            if [ -z "${DOPPLER_TOKEN:-}" ]; then
+              echo "DOPPLER_TOKEN is not set. Add it to the exaktiv_deploy context (Doppler ci service token)." >&2
+              exit 1
+            fi
+            V=3.75.3
+            F="doppler_${V}_linux_amd64.tar.gz"
+            curl -sSfL --tlsv1.2 --proto "=https" --retry 3 -O "https://github.com/DopplerHQ/cli/releases/download/${V}/${F}"
+            echo "9c840cdd32cffff06d048329549ba2fa908146b385f21cd1d54bf34a0082d0db  ${F}" | sha256sum -c -
+            sudo tar -xzf "$F" -C /usr/local/bin doppler
+            doppler secrets download --no-file --format json \
+              | jq -r 'to_entries[] | select(.key | test("^[A-Za-z_][A-Za-z0-9_]*$")) | "export \(.key)=\(.value | @sh)"' >> "$BASH_ENV"
+  restore-uv-cache:
+    steps:
+      - restore_cache:
+          keys:
+            - uv-v1-{{ checksum "uv.lock" }}
+  save-uv-cache:
+    steps:
+      - save_cache:
+          key: uv-v1-{{ checksum "uv.lock" }}
+          paths:
+            - ~/.cache/uv
+
+jobs:
+  python:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - install-uv
+      - restore-uv-cache
+      - run: uv sync --frozen
+      - save-uv-cache
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+      - run: uv run python scripts/check_fixture_sources.py tests/fixtures
+      - run:
+          name: Licence check (G12)
+          command: uv run pip-licenses --from=mixed --format=json | uv run python scripts/check_licences.py
+      - run:
+          name: Unit and guardrail tests
+          command: >
+            uv run pytest -m "not integration and not site_browser" tests/unit tests/guardrails tests/site
+            --deselect tests/guardrails/test_g9_secret_scan.py
+
+  ui:
+    docker:
+      - image: cimg/node:24.11
+    steps:
+      - checkout
+      - install-pnpm
+      - run: python3 --version || (sudo apt-get update -q && sudo apt-get install -y -q python3)
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir ui lint
+      - run: pnpm --dir ui typecheck
+      - run: pnpm --dir ui test
+      - run:
+          name: Brand copies in sync (EXD2)
+          command: python3 scripts/sync_brand.py --check
+      - run:
+          name: Brand guard (EXD2)
+          command: python3 brand/tokens/check_brand.py
+      - run:
+          name: Planted hex colour must fail the brand guard
+          command: |
+            mkdir -p /tmp/planted
+            printf 'export const P = () => <p style={{ color: "%s" }}>x</p>;\n' "#ff0000" > /tmp/planted/Planted.tsx
+            if python3 brand/tokens/check_brand.py /tmp/planted; then
+              echo "brand guard did not catch the planted hex colour"; exit 1
+            fi
+      - run: pnpm --dir ui build
+      - run:
+          name: No external host in the build (EXD2)
+          command: python3 scripts/check_no_external.py ui/dist
+      - run:
+          name: Licence check (G12)
+          command: >
+            pnpm --dir ui dlx license-checker-rseidelsohn --start . --excludePackages "exaktiv-ui@0.0.0"
+            --onlyAllow "MIT;MIT-0;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;MPL-2.0;0BSD;BlueOak-1.0.0;CC0-1.0;CC-BY-4.0"
+            --summary
+
+  site:
+    # EXD5: build gate, browser checks (0 cookies, 0 third-party requests, weight) and Lighthouse.
+    docker:
+      - image: cimg/python:3.12-node
+    steps:
+      - checkout
+      - install-uv
+      - install-pnpm
+      - restore-uv-cache
+      - run: uv sync --frozen
+      - save-uv-cache
+      - run:
+          name: Build the site (claims, banned claims, URL, page and brand gates)
+          command: uv run python scripts/build_site.py
+      - run: uv run playwright install --with-deps chromium
+      - run:
+          name: Browser checks on every page
+          command: uv run pytest -m site_browser tests/site
+      - run:
+          name: Lighthouse (pinned) on every page
+          command: uv run python scripts/check_lighthouse.py
+
+  secrets:
+    docker:
+      - image: cimg/python:3.12
+    environment:
+      GITLEAKS_VERSION: "8.30.1"
+    steps:
+      - checkout
+      - install-uv
+      - run:
+          name: Install gitleaks (pinned version, checksum checked)
+          command: |
+            base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+            curl -sSfL -O "${base}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+            curl -sSfL -O "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+            grep "linux_x64.tar.gz" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c -
+            sudo tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -C /usr/local/bin gitleaks
+      - run:
+          name: Scan the repository history (G9)
+          command: gitleaks detect --source . --config .gitleaks.toml --redact
+      - run:
+          name: Planted fake key must fail the scan
+          command: |
+            mkdir planted
+            printf 'aws_access_key_id = "%s%s"\n' "AKIA" "QYLPMN5HHHFPZAM2" > planted/config.py
+            if gitleaks detect --no-git --source planted --config .gitleaks.toml --no-banner; then
+              echo "scan did not catch the planted key"; exit 1
+            fi
+            rm -rf planted
+      - run: uv sync --frozen
+      - run: uv run pytest tests/guardrails/test_g9_secret_scan.py
+
+  integration:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - install-uv
+      - run: uv sync --frozen
+      - run: scripts/make_env.sh
+      - run: docker compose -f deploy/docker-compose.yml --env-file .env up -d --wait
+      - run: uv run pytest -m integration
+      - run:
+          name: Stack logs on failure
+          when: on_fail
+          command: docker compose -f deploy/docker-compose.yml --env-file .env logs --no-color --tail=100
+      - run:
+          name: Stop the stack
+          when: always
+          command: docker compose -f deploy/docker-compose.yml --env-file .env down -v
+
+  deploy-infra:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - load-doppler
+      - run:
+          name: Skip if the server is not configured yet
+          command: |
+            if [ -z "${APPS_HOST:-}" ]; then
+              echo "APPS_HOST is not set in Doppler ci. Skipping the deploy."
+              circleci-agent step halt
+            fi
+      # circleci-exaktiv, as shown by: ssh-keygen -lf ~/vultr-keys/circleci-exaktiv.pub
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:qk4S2wcjY5rpid5SrpqXCPPs+MzjDyOxzkKxKPIAmX0"
+      - run:
+          name: Deploy the server stack
+          command: |
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            cat deploy/known_hosts >> ~/.ssh/known_hosts
+            ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes exaktiv-deploy@"$APPS_HOST" "$CIRCLE_SHA1"
+
+workflows:
+  ci:
+    jobs:
+      - python
+      - ui
+      - site
+      - secrets
+      - integration
+      - deploy-infra:
+          context: exaktiv_deploy
+          requires: [python, ui, site, secrets, integration]
+          filters:
+            branches:
+              only: main

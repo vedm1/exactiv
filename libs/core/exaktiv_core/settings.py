@@ -3,17 +3,13 @@
 from functools import lru_cache
 
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+
+from exaktiv_core.db import PostgresSettings
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-    postgres_host: str = "localhost"
-    postgres_port: int = 5442
-    postgres_db: str = "exaktiv"
-    postgres_user: str = "exaktiv"
-    postgres_password: SecretStr
+class Settings(PostgresSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     minio_endpoint: str = "http://localhost:9000"
     minio_access_key: SecretStr

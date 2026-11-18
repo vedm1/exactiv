@@ -27,8 +27,8 @@ class PgStore:
     def __init__(self, pool: asyncpg.Pool | None = None) -> None:
         self._pool = pool
 
-    async def open(self, dsn: str) -> None:
-        self._pool = await asyncpg.create_pool(dsn, min_size=1, max_size=5)
+    async def open(self, dsn: str, **connect_kwargs: str) -> None:
+        self._pool = await asyncpg.create_pool(dsn, min_size=1, max_size=5, **connect_kwargs)
 
     async def close(self) -> None:
         if self._pool is not None:

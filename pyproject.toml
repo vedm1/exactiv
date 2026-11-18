@@ -46,6 +46,7 @@ select = ["E", "F", "I", "B", "UP", "S"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "S603", "S607"]
 "scripts/**" = ["S603", "S607"]
+"deploy/server/**" = ["E501"]
 # Every value interpolated into Markup in build_site.py is escaped first (html.escape).
 "scripts/build_site.py" = ["S603", "S607", "S704"]
 

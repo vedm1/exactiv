@@ -114,8 +114,15 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 | Item | Blocks | Status |
 |------|--------|--------|
 | Choose an India hosting provider with India data location, ≤ $10 per month for about 4 GB RAM (compare, for example, DigitalOcean Bangalore, Akamai/Linode Mumbai, Vultr Mumbai/Bangalore, E2E Networks) | EXK0c | 🔲 Open |
-| Choose a secrets mechanism without AWS Secrets Manager (for example SOPS + age, Infisical, Doppler) | EXK0b | 🔲 Open |
+| Choose a secrets mechanism without AWS Secrets Manager (for example SOPS + age, Infisical, Doppler) | EXK0b | ✅ Done 18 Nov 2026: Doppler, plus one CircleCI context variable `DOPPLER_TOKEN` |
 | EU-only engineering access from day 1, or only for personal data? | EXK0b | 🔲 Open |
+| Neon (Frankfurt): sign the DPA, get the sub-processor list, add Neon to the privacy notice recipients (PRD-W §8.3); state the plan and its cost against the $10 limit | EXK0b, EXW3 | 🔲 Open |
+| Pooled Neon host: the code was probed through a local PgBouncer 1.26.1 (transaction mode) on 18 Nov 2026 and worked. Still to do: run `alembic upgrade head` once against the real Neon pooled URL (use a Neon test branch) | EXK0b close | 🔲 Open (user) |
+| Doppler workplace region and DPA (secrets only, no customer data) | EXK0b | 🔲 Open |
+| Temporal database: Neon (extra compute cost, 24/7 polling) or a small local Postgres with a volume and a backup | Temporal phase | 🔲 Parked by the user until that phase's spec |
+| CircleCI context `exaktiv_deploy` restricted to `main`; "pass secrets to forked PRs" off; `main` protected in GitHub | EXK0b close | 🔲 Open (user) |
+| EXK0b live checks: MinIO starts with `user: 65532` on a fresh named volume on the host; first CircleCI deploy; Neon connection with `POSTGRES_SSL=true`; Neon restore test | EXK0b close | 🔲 Open |
+| CLAUDE.md "Datastore" row: "PostgreSQL 16+ (Neon Frankfurt for EU; local Docker for development)" | EXK0b close | ✅ Done 18 Nov 2026 (user approved) |
 | Frontier model endpoint per region that keeps data in region (Gemini Flash in India; an EU frontier model), and its data-use terms | EXK2 | 🔲 Open |
 | Measure stack RAM to confirm a 4 GB server is enough | EXK0b | ✅ Idle total about 231 MiB (EXK0). Confirm under load in EXK0b |
 | Dataset licences for FUNSD, IAM, IIIT Hyderabad Indic handwriting sets | EXC2 | 🔲 Open |
@@ -135,7 +142,7 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 | Update the live PRD-W master copy (§9 still describes v4 tokens and General Sans) to point to `brand/README.md` | EXD5 | 🔲 Open |
 | Where the website code lives: `site/` in this repository, or its own repository | EXD5 | ✅ `site/` in this repository (EXD5, 18 Nov 2026). The form service lives in `services/site_form` (EXW1) |
 | PDF renderer for EXD4 (for example WeasyPrint, BSD licence) and its licence check | EXD4 | 🔲 Open |
-| MinIO image source and licence (official image no longer public; AGPL-3.0) | EXK0b | 🔲 Open. EXK0 uses the Chainguard build by digest |
+| MinIO image source and licence (official image no longer public; AGPL-3.0) | EXK0b | 🔲 Open. EXK0 and the server stack use the Chainguard build by digest; the policy allows only `cgr.dev/chainguard/` |
 | PRD-W D1: domain for the site (a neutral global domain, not .de) | EXD5, EXW2 | 🔲 Open |
 | PRD-W D4: form back end. Proposed: our own endpoint on the EU server (EXW1) | EXW1 | ✅ Done 18 Nov 2026: own endpoint, `services/site_form` |
 | PRD-W D6: EU mail provider for the form mail and the domain mailbox | EXW2 | ✅ Form mail: Brevo HTTP API (18 Nov 2026). 🔲 Open for the domain mailbox |

@@ -32,7 +32,7 @@ def alembic_config(dsn: str) -> Config:
 @pytest.fixture
 async def temp_dsn() -> AsyncIterator[str]:
     """An empty throwaway database on the compose Postgres. Dropped after the test."""
-    pg = PostgresSettings()  # type: ignore[call-arg]
+    pg = PostgresSettings()
     name = f"exaktiv_test_{uuid.uuid4().hex[:12]}"
     admin = await asyncpg.connect(pg.dsn())
     try:
