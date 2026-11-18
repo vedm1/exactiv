@@ -1,0 +1,66 @@
+[project]
+name = "exaktiv"
+version = "0.0.0"
+description = "Exaktiv workspace root"
+requires-python = ">=3.12,<3.13"
+dependencies = ["exaktiv-core", "exaktiv-api", "exaktiv-worker", "exaktiv-model", "exaktiv-site-form"]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "ruff",
+    "mypy",
+    "pre-commit",
+    "pip-licenses",
+    "pyyaml",
+    "types-pyyaml",
+    "boto3-stubs[s3]",
+    "jinja2>=3.1.6",
+    "playwright>=1.65.2",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["libs/core", "services/api", "services/worker", "services/site_form", "model"]
+
+[tool.uv.sources]
+exaktiv-core = { workspace = true }
+exaktiv-api = { workspace = true }
+exaktiv-worker = { workspace = true }
+exaktiv-model = { workspace = true }
+exaktiv-site-form = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".claude", "brand"]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S603", "S607"]
+"scripts/**" = ["S603", "S607"]
+# Every value interpolated into Markup in build_site.py is escaped first (html.escape).
+"scripts/build_site.py" = ["S603", "S607", "S704"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["libs", "services", "model", "tests", "scripts", "migrations"]
+explicit_package_bases = true
+mypy_path = ["scripts", "libs/core", "services/api", "services/worker", "services/site_form", "model"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "integration: needs the docker compose stack (deploy/docker-compose.yml)",
+    "site_browser: needs Chromium (uv run playwright install chromium), own CI job",
+]

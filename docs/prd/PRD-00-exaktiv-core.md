@@ -181,7 +181,7 @@ Each guardrail must be checkable by a reviewer who was not in the design discuss
 | OCR | A local OCR engine plus the model's own vision input | Handwriting needs both. |
 | Datastore | PostgreSQL 16 | Values, reviews, registry, metering. |
 | Object storage | S3-compatible, per region | Original files and page images. |
-| Reviewer UI | React + TypeScript, Personal Design System tokens (teal accent, Inter + Lora + JetBrains Mono, dark default with a light mirror) | One UI codebase for both products. |
+| Reviewer UI | React + TypeScript, Exaktiv brand package tokens and components (`brand/`; superseded the Personal Design System on 18 Nov 2026), dark default with a light mirror | One UI codebase for both products. |
 | Cloud | AWS: Mumbai (ap-south-1) for India tenants, Frankfurt (eu-central-1) for EU tenants | Data residency per region. |
 | Secrets | AWS Secrets Manager, injected at runtime | G9. |
 | CI | GitHub Actions: lint, type check, unit tests, integration tests, secret scan, licence check | |

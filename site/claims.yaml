@@ -1,0 +1,96 @@
+# Claims register (PRD-W section 6). The build reads this file.
+# A footnote number renders only for a claim with status "ready" (the Trace gate, G1 for the site).
+# status: ready | to_confirm | to_write
+version: 1
+claims:
+  - id: team-experience
+    text: "26+ years of combined experience"
+    status: ready
+    evidence: "Both CVs"
+    cite: "Combined career length of the team, from the CVs held by Valyrian Tech Pvt Ltd."
+    pages: [home, team]
+  - id: in-region
+    text: "AI processing stays in your region"
+    status: to_confirm
+    evidence: "Internal register of the AI model endpoints we use per region, with provider terms"
+    pages: [home, security, how-we-work]
+  - id: no-training
+    text: "We never train models on your code or data"
+    status: to_confirm
+    evidence: "Provider terms with no-training and no-retention settings, plus our written policy"
+    pages: [home, security, how-we-work]
+  - id: findings-sourced
+    text: "Every finding links to its source"
+    status: to_confirm
+    evidence: "A demo output from our legacy analyser that shows file and line links"
+    pages: [home, how-we-work, legacy-modernisation]
+  - id: human-approval
+    text: "No change without human approval"
+    status: to_write
+    evidence: "Written engagement process"
+    pages: [home, how-we-work]
+  - id: nda-dpa
+    text: "NDA and DPA on request"
+    status: to_write
+    evidence: "NDA template and DPA template with standard contractual clauses"
+    pages: [security]
+  - id: reply-time
+    text: "We reply within 1 business day"
+    status: ready
+    evidence: "Inbox routine"
+    cite: "Inbox routine: every enquiry gets a reply from a person within 1 business day."
+    pages: [contact]
+  # Added in EXD5. The Security page states these rules (PRD-W section 8.1), so they need a register row.
+  - id: access-logged
+    text: "Access to client code is limited to the named delivery team and is logged"
+    status: to_write
+    evidence: "Written access-control procedure and a sample access log"
+    pages: [security]
+  - id: retention
+    text: "We delete client files and derived data when the engagement ends, or as the contract says"
+    status: to_write
+    evidence: "Written retention policy"
+    pages: [security]
+  # The "Why now" box (PRD-W section 12). Evidence is the source page. Nobody has checked the dates
+  # against the sources yet, so each stays to_confirm.
+  - id: eu-cra
+    text: "Cyber Resilience Act: reporting of actively exploited vulnerabilities applies since 11 September 2026, also for products already on the market. Full duties, including the SBOM, apply from 11 December 2027."
+    status: to_confirm
+    evidence: "Source page, dates checked against the regulation text"
+    source_url: "https://www.noze.it/en/insights/cyber-resilience-act-sbom/"
+    pages: [legacy-modernisation]
+  - id: eu-data-act
+    text: "EU Data Act: cloud switching rules apply since 12 September 2025. Switching and egress charges are banned from 12 January 2027."
+    status: to_confirm
+    evidence: "Source page, dates checked against the regulation text"
+    source_url: "https://www.cloudmagazin.com/en/2026/07/15/eu-data-act-makes-cloud-portability-mandatory/"
+    pages: [legacy-modernisation]
+  - id: eu-nis2
+    text: "NIS2: now national law in member states. In Germany since 6 December 2025. Customers pass its supply-chain duties on to their software suppliers."
+    status: to_confirm
+    evidence: "Source page, dates checked against the national law"
+    source_url: "https://www.secfix.com/post/germanys-new-nis2-cybersecurity-law"
+    pages: [legacy-modernisation]
+  - id: eu-ai-act
+    text: "EU AI Act: high-risk duties for stand-alone systems apply from 2 December 2027, and for AI in regulated products from 2 August 2028."
+    status: to_confirm
+    evidence: "Source page, dates checked against the omnibus text"
+    source_url: "https://www.gibsondunn.com/eu-ai-act-omnibus-agreement-postponed-high-risk-deadlines-and-other-key-"
+    pages: [legacy-modernisation]
+
+# Banned claims (PRD-W section 6). The build fails when any pattern matches page text, a title,
+# a description, an alt text, or a text file.
+banned:
+  - {id: gdpr-or-ai-act-compliant, pattern: '(?i)GDPR[\s-]+(compliant|certified)|EU\s+AI\s+Act[\s-]+compliant'}
+  - {id: certification-we-do-not-hold, pattern: '(?i)\b(ISO[\s/-]*27001|SOC[\s-]*2|TISAX)\b'}
+  - {id: social-proof, pattern: '(?i)\btrusted by\b|\btestimonials?\b|\bour clients include\b'}
+  - {id: accuracy-or-no-human, pattern: '(?i)100\s*%\s*accura|fully automated modernisation|no human (is )?needed'}
+  - {id: office-or-company-origin, pattern: '(?i)\b(EU|German)\s+company\b'}
+  - {id: product-data-live, pattern: '(?i)product data[^.]{0,80}\b(is live|in production|live customers)\b'}
+
+# Third-party URLs allowed in <a href> only (rel="noopener noreferrer"). Never in src, link or css.
+external_allow:
+  - {url: "https://www.noze.it/en/insights/cyber-resilience-act-sbom/", claim: eu-cra}
+  - {url: "https://www.cloudmagazin.com/en/2026/07/15/eu-data-act-makes-cloud-portability-mandatory/", claim: eu-data-act}
+  - {url: "https://www.secfix.com/post/germanys-new-nis2-cybersecurity-law", claim: eu-nis2}
+  - {url: "https://www.gibsondunn.com/eu-ai-act-omnibus-agreement-postponed-high-risk-deadlines-and-other-key-", claim: eu-ai-act}

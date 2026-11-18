@@ -11,7 +11,8 @@ Capacity: two founders at about 20 hours per week each. Keep each phase to one s
 | Backend language | Python 3.12 only (FastAPI, Temporal Python SDK) | Kotlin / Spring Boot (PRD-00 §8) |
 | Repository | Monorepo | — |
 | Workflows | Temporal, no Kafka in v1 | — (confirmed) |
-| UI | React + TypeScript, Personal Design System | — (confirmed) |
+| UI | React + TypeScript, Exaktiv brand package (`brand/`) | Personal Design System (PRD-00 §8) |
+| Design system (18 Nov 2026) | Exaktiv identity v1.0: Leader mark, Proof palette (Paper, Ink, Cobalt, Vermilion, Marker), Workbench type (Young Serif, Instrument Sans, Gelasio italic), no monospace. Phases EXD1 to EXD5. | Ved Design System v4 tokens (PRD-W §9), Personal Design System |
 | Base model licence | Apache 2.0 or MIT only | — (confirmed) |
 | Hosting | Local first. Server cost limit $10 per month per region. AWS Mumbai minimum useful stack is about $22 per month, so AWS is out. EU: Hetzner Germany. India: provider to choose. | AWS Mumbai + Frankfurt (PRD-00 §8) |
 | Secrets | AWS Secrets Manager no longer applies. Mechanism to choose (open item). | AWS Secrets Manager |
@@ -41,6 +42,9 @@ EXC1 and EXP1 are configuration only, so they can start after EXK4. Extraction p
 
 ### Hosting phases
 EXK0b (EU) gates EXP6, because the free-fill test uses prospect data. EXK0c (India) gates EXC9, because real medical records must stay in India (A-G2). The Claims PoC uses synthetic data only (A-G5), so it runs locally until EXC9.
+
+### EXD5 / EXW1 → EXW2 → EXW3: website order
+EXD5 builds the pages and EXW1 builds the form service. EXW2 deploys both on the EXK0b server, so EXK0b must be complete first. EXW3 is the launch gate: the site stays behind the staging password until every claim has evidence and the lawyer review is recorded. If the site goes public first, an unsupported claim can damage trust at the first security review.
 
 ## Risks by Phase
 
@@ -82,6 +86,25 @@ EXK0b (EU) gates EXP6, because the free-fill test uses prospect data. EXK0c (Ind
 - **Risk**: ITEK or 2BA see Exaktiv as a competitor.
 - **Mitigation**: Ask early. Position as a supplier-side service.
 
+### EXD: design system before any screen, report or page
+EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_brand.py` gate into `ui/` and CI before the first screen. EXD3 (components) comes before EXK6-ui, and EXD4 (report template) before EXK7 and EXK8. EXD5 (website) can run in parallel with the engine phases, because it needs only EXD2.
+- **Risk**: Screens or PDFs built before EXD2 hard-code colours and fonts, and drift from the brand.
+- **Mitigation**: `check_brand.py` in CI fails on hex values, raw tokens, monospace fonts, radius and blurred shadows.
+
+### EXW1
+- **Risk**: Personal data from the form gets into logs, or stays longer than 6 months.
+- **Mitigation**: G11 masking, no message content in logs, a daily deletion job with a test (W-G4), independent subagent review.
+
+### EXW2
+- **Risk**: The site goes live on an ad hoc host outside the EU before EXK0b exists.
+- **Mitigation**: EXW2 depends on EXK0b. No deploy outside the EU region.
+
+### EXW3
+- **Risk**: The site goes public with a claim that has no evidence, or before the lawyer review.
+- **Mitigation**: Claims evidence and the recorded lawyer review are EXW3 completion criteria.
+- **Risk**: The site describes services that overlap with a team member's current employer.
+- **Mitigation**: The employment contract check is an EXW3 completion criterion.
+
 ### All phases
 - **Risk**: Two founders at 20 hours per week each make the build slow.
 - **Mitigation**: One small PR per phase. Build the core once for both products.
@@ -94,7 +117,7 @@ EXK0b (EU) gates EXP6, because the free-fill test uses prospect data. EXK0c (Ind
 | Choose a secrets mechanism without AWS Secrets Manager (for example SOPS + age, Infisical, Doppler) | EXK0b | 🔲 Open |
 | EU-only engineering access from day 1, or only for personal data? | EXK0b | 🔲 Open |
 | Frontier model endpoint per region that keeps data in region (Gemini Flash in India; an EU frontier model), and its data-use terms | EXK2 | 🔲 Open |
-| Measure stack RAM to confirm a 4 GB server is enough | EXK0b | 🔲 Open |
+| Measure stack RAM to confirm a 4 GB server is enough | EXK0b | ✅ Idle total about 231 MiB (EXK0). Confirm under load in EXK0b |
 | Dataset licences for FUNSD, IAM, IIIT Hyderabad Indic handwriting sets | EXC2 | 🔲 Open |
 | Volunteers (15–20, paid) for handwritten forms in EN, HI, KN | EXC2 | 🔲 Open |
 | Current IRDAI list of non-medical (non-payable) items, with version | EXC5 | 🔲 Open |
@@ -108,3 +131,18 @@ EXK0b (EU) gates EXP6, because the free-fill test uses prospect data. EXK0c (Ind
 | ISO 27001 start date (proposed: month 4) | EXC9 | 🔲 Open |
 | Mid-size insurers and TPAs in the founders' network for the 30-day test | EXC9 | 🔲 Open |
 | Three paying Product Data suppliers | EXP8 | 🔲 Open |
+| PRD-W open item O1: repository rules still name the retired Personal Design System | EXD2 | ✅ Done 18 Nov 2026: CLAUDE.md, specs, build plan and PRD notes point to `brand/` |
+| Update the live PRD-W master copy (§9 still describes v4 tokens and General Sans) to point to `brand/README.md` | EXD5 | 🔲 Open |
+| Where the website code lives: `site/` in this repository, or its own repository | EXD5 | ✅ `site/` in this repository (EXD5, 18 Nov 2026). The form service lives in `services/site_form` (EXW1) |
+| PDF renderer for EXD4 (for example WeasyPrint, BSD licence) and its licence check | EXD4 | 🔲 Open |
+| MinIO image source and licence (official image no longer public; AGPL-3.0) | EXK0b | 🔲 Open. EXK0 uses the Chainguard build by digest |
+| PRD-W D1: domain for the site (a neutral global domain, not .de) | EXD5, EXW2 | 🔲 Open |
+| PRD-W D4: form back end. Proposed: our own endpoint on the EU server (EXW1) | EXW1 | ✅ Done 18 Nov 2026: own endpoint, `services/site_form` |
+| PRD-W D6: EU mail provider for the form mail and the domain mailbox | EXW2 | ✅ Form mail: Brevo HTTP API (18 Nov 2026). 🔲 Open for the domain mailbox |
+| Brevo: sign the DPA, get the sub-processor list, confirm how long Brevo keeps transactional mail content | EXW2, EXW3 | 🔲 Open |
+| Team mailbox keeps a copy of each enquiry: add a 6-month deletion routine and say so in the privacy notice (PRD-W §8.3) | EXW2, EXW3 | 🔲 Open |
+| EXW2 deploy settings for the form service: `TRUSTED_PROXY_HOPS` (1 behind the proxy, and the app port closed to the outside), timers for `retention` (daily), `retry-mail` (every minute), `purge-hits` (hourly), uvicorn with `--no-access-log`, alert on the log event `enquiry_mail_failed` | EXW2 | 🔲 Open |
+| Claims evidence (PRD-W §6): register of AI model endpoints per region, provider no-training terms, traceability demo output | EXW3 | 🔲 Open |
+| Lawyer review of the privacy notice (PRD-W §8.3) | EXW3 | 🔲 Open |
+| Employment contract check before the public launch | EXW3 | 🔲 Open |
+| First client contract close (trigger for the legal notice) | EXW4 | 🔲 Open |

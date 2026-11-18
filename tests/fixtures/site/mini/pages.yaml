@@ -1,0 +1,4 @@
+version: 1
+pages:
+  - {slug: home, path: "/", title: "Fixture home", description: "A synthetic home page for the site builder tests.", in_nav: true, cta: {label: "Talk to us", href: "/contact/"}}
+  - {slug: "404", path: "/404.html", title: "Fixture not found", description: "A synthetic not found page for the site builder tests.", in_nav: false, cta: {label: "Go to Home", href: "/"}}

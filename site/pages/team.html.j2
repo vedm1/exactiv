@@ -1,0 +1,24 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Senior people. No hand-offs.</h1>{% endblock %}
+{% block lead %}{{ backed('team-experience', '26+ years of combined experience') }} across banking and insurance, retail and e-commerce.{% endblock %}
+{% block content %}
+  <!-- [[TODO before launch: confirm that no description on this page can identify a client]] -->
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Past work, without names.</h2>
+      <ul class="ex-measure">
+        <li>Modernised lending and insurance platforms for a large life insurer.</li>
+        <li>Designed workflow architecture for a global retailer’s item data platform.</li>
+        <li>Led product delivery for advertising products on a large e-commerce marketplace.</li>
+        <li>Built AI agents for legacy code analysis.</li>
+      </ul>
+      <h2>Skills.</h2>
+      <ul class="ex-measure">
+        <li>Product discovery and delivery governance.</li>
+        <li>Java, Spring Boot, Kotlin, Temporal, Kafka, PostgreSQL and distributed systems.</li>
+        <li>LangChain, LangGraph and agentic systems.</li>
+        <li>Threat modelling, OWASP Top 10 and post-quantum cryptography migration.</li>
+      </ul>
+    </div>
+  </section>
+{% endblock %}

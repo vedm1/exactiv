@@ -1,0 +1,8 @@
+version: 1
+base_url: "https://example.test"
+legal_name: "Example Test Ltd"
+brand: "Exaktiv"
+lang: "en-GB"
+contact_email: "hello@example.test"
+security_email: "security@example.test"
+security_expires: "2099-01-01"

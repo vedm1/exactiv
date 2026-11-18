@@ -22,6 +22,7 @@ One engine serves two products:
 | `PRD-00-exaktiv-core.md` | The shared engine: architecture, guardrails, source-of-record table, stack, core phases |
 | `PRD-A-exaktiv-claims.md` | Exaktiv Claims: health-claim file extraction for Indian TPAs and insurers |
 | `PRD-B1-exaktiv-product-data.md` | Exaktiv Product Data: ETIM feature fill that passes data-pool checks |
+| `PRD-W-exaktiv-website.md` | The Exaktiv capability website: pages, claims register, contact form, EU security and privacy, launch gate (build phases EXD5 and EXW) |
 
 Read the core PRD first. The product PRDs refer to it and do not repeat it.
 
@@ -54,7 +55,7 @@ These are proposals. The PRDs mark each one as "Proposed".
 2. Workflow engine: Temporal. Kafka is not in v1; add it when event volume needs it.
 3. Cloud and regions: AWS Mumbai (ap-south-1) for Claims; AWS Frankfurt (eu-central-1) for Product Data.
 4. Default frontier model per region, and the open base model for fine-tuning (Apache 2.0 or MIT licence only).
-5. Reviewer UI framework: React + TypeScript, with the Personal Design System tokens.
+5. Reviewer UI framework: React + TypeScript, with the Exaktiv brand package (`brand/`). The Personal Design System is retired (18 Nov 2026).
 
 ## Source documents
 

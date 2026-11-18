@@ -1,0 +1,44 @@
+# Local hooks only: they use the project tools, no extra downloads.
+# Install once: uv run pre-commit install   (needs gitleaks on PATH: brew install gitleaks)
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: gitleaks
+        name: gitleaks (staged changes)
+        entry: gitleaks protect --staged --redact --config .gitleaks.toml
+        language: system
+        pass_filenames: false
+      - id: fixture-source-notes
+        name: fixture source notes (G8)
+        entry: uv run python scripts/check_fixture_sources.py tests/fixtures
+        language: system
+        pass_filenames: false
+        files: ^tests/fixtures/
+      - id: brand-check
+        name: brand guard (EXD2)
+        entry: python3 brand/tokens/check_brand.py
+        language: system
+        pass_filenames: false
+        files: ^(brand/|ui/src/)
+      - id: brand-sync
+        name: brand copies in sync (EXD2)
+        entry: python3 scripts/sync_brand.py --check
+        language: system
+        pass_filenames: false
+        files: ^(brand/|ui/src/tokens/|ui/src/styles/|ui/public/)
+      - id: site-build
+        name: site build gates (EXD5)
+        entry: uv run python scripts/build_site.py
+        language: system
+        pass_filenames: false
+        files: ^(site/|brand/|scripts/build_site.py)

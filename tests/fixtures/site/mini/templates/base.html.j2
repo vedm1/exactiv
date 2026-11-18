@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="{{ cfg.lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }}</title>
+<meta name="description" content="{{ page.description }}">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+<link rel="canonical" href="{{ canonical }}">
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/exaktiv.css">
+<script type="application/ld+json">{{ json_ld }}</script>
+</head>
+<body>
+<main>
+{% block content %}{% endblock %}
+{{ cites() }}
+</main>
+</body>
+</html>

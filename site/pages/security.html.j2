@@ -1,0 +1,35 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Your code stays where you say.</h1>{% endblock %}
+{% block lead %}Here is where your files go, where the AI models run, who sees your code and how long we keep it.{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Regions.</h2>
+      <p class="ex-measure">{{ backed('in-region', 'AI processing stays in your region.') }}</p>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Your data</th><th>Files stored in</th><th>Models run in</th><th>Fallback to another region</th></tr></thead>
+          <tbody>
+            <tr><td>EU or UK</td><td>EU region</td><td>EU-region endpoints only</td><td><b>Never.</b> The task stops and goes to a person.</td></tr>
+            <tr><td>India</td><td>India region</td><td>India-region endpoints only</td><td><b>Never.</b></td></tr>
+            <tr><td>Other</td><td>Agreed in the contract</td><td>Agreed in the contract</td><td><b>Never.</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Models, access and retention.</h2>
+      <div class="ex-pillars">
+        <div class="ex-pillar"><h3>Model use</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} We use model providers only on terms that limit retention. We name the regions and the provider types here. We list the exact providers in the security pack.</p></div>
+        <div class="ex-pillar"><h3>Access</h3><p>{{ backed('access-logged', 'Access to client code is limited to the named delivery team and is logged.') }} We work inside your own environment when you ask.</p></div>
+        <div class="ex-pillar"><h3>Retention</h3><p>{{ backed('retention', 'We delete client files and derived data when the engagement ends, or as the contract says.') }}</p></div>
+        <div class="ex-pillar"><h3>Contracts</h3><p>NDA before access. {{ backed('nda-dpa', 'NDA and DPA on request') }}, with standard contractual clauses.</p></div>
+      </div>
+      <h2>Report a security issue.</h2>
+      <p class="ex-measure">Write to <a href="mailto:{{ cfg.security_email }}">{{ cfg.security_email }}</a>. The file <a href="/.well-known/security.txt">security.txt</a> has the same contact.</p>
+    </div>
+  </section>
+{% endblock %}

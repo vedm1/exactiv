@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="{{ cfg.lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }}</title>
+<meta name="description" content="{{ page.description }}">
+{% if noindex %}<meta name="robots" content="noindex">
+{% endif %}<link rel="canonical" href="{{ canonical }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ cfg.brand }}">
+<meta property="og:title" content="{{ page.title }}">
+<meta property="og:description" content="{{ page.description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ cfg.base_url }}/assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/young-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/exaktiv.css">
+<script type="application/ld+json">{{ json_ld }}</script>
+</head>
+<body>
+<header class="ex-header">
+  <div class="ex-header__in">
+    <a class="ex-header__logo" href="/" aria-label="{{ cfg.brand }}, home"><img src="/assets/logo/exaktiv-lockup.svg" alt="{{ cfg.brand }}" width="140" height="30"></a>
+    <nav class="ex-nav" aria-label="Main">
+{% for p in nav %}      <a href="{{ p.path }}"{% if p.slug == page.slug %} aria-current="page"{% endif %}>{{ p.nav_label }}</a>
+{% endfor %}    </nav>
+    <a class="ex-btn ex-header__cta" href="/contact/">Contact</a>
+  </div>
+</header>
+
+<main id="main">
+{% block hero %}
+  <section class="ex-hero">
+    <div class="ex-hero__in">
+      <div class="ex-hero__text">
+        {% block h1 %}{% endblock %}
+        <p class="ex-lead">{% block lead %}{% endblock %}</p>
+{% if page.cta %}        <div class="ex-actions"><a class="ex-btn ex-btn--primary ex-btn--go" href="{{ page.cta.href }}">{{ page.cta.label }}</a></div>
+{% endif %}      </div>
+{% block aside_wrap %}{% endblock %}
+    </div>
+  </section>
+{% endblock %}
+{% block content %}{% endblock %}
+{{ cites() }}
+</main>
+
+<footer class="ex-footer">
+  <div class="ex-footer__in">
+    <img src="/assets/logo/exaktiv-lockup-reversed.svg" alt="{{ cfg.brand }}" width="120" height="26">
+    <span class="ex-footer__legal">© 2026 {{ cfg.legal_name }}. {{ cfg.brand }} is a brand of {{ cfg.legal_name }}.</span>
+    <span class="ex-footer__links"><a href="/privacy/">Privacy notice</a><a href="/.well-known/security.txt">Security contact</a></span>
+  </div>
+</footer>
+</body>
+</html>

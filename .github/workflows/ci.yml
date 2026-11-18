@@ -1,0 +1,123 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: "8.30.1"
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+      - run: uv run python scripts/check_fixture_sources.py tests/fixtures
+      - name: Licence check (G12)
+        run: uv run pip-licenses --from=mixed --format=json | uv run python scripts/check_licences.py
+      - name: Unit and guardrail tests
+        run: uv run pytest -m "not integration and not site_browser" tests/unit tests/guardrails tests/site --deselect tests/guardrails/test_g9_secret_scan.py
+
+  ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir ui lint
+      - run: pnpm --dir ui typecheck
+      - run: pnpm --dir ui test
+      - name: Brand copies in sync (EXD2)
+        run: python3 scripts/sync_brand.py --check
+      - name: Brand guard (EXD2)
+        run: python3 brand/tokens/check_brand.py
+      - name: Planted hex colour must fail the brand guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/planted"
+          printf 'export const P = () => <p style={{ color: "%s" }}>x</p>;\n' "#ff0000" > "$RUNNER_TEMP/planted/Planted.tsx"
+          if python3 brand/tokens/check_brand.py "$RUNNER_TEMP/planted"; then
+            echo "brand guard did not catch the planted hex colour"; exit 1
+          fi
+      - run: pnpm --dir ui build
+      - name: No external host in the build (EXD2)
+        run: python3 scripts/check_no_external.py ui/dist
+      - name: Licence check (G12)
+        run: >
+          pnpm --dir ui dlx license-checker-rseidelsohn --start . --excludePackages "exaktiv-ui@0.0.0"
+          --onlyAllow "MIT;MIT-0;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;MPL-2.0;0BSD;BlueOak-1.0.0;CC0-1.0;CC-BY-4.0"
+          --summary
+
+  site:
+    # EXD5: build gate, browser checks (0 cookies, 0 third-party requests, weight) and Lighthouse.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Build the site (claims, banned claims, URL, page and brand gates)
+        run: uv run python scripts/build_site.py
+      - run: uv run playwright install --with-deps chromium
+      - name: Browser checks on every page
+        run: uv run pytest -m site_browser tests/site
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Lighthouse (pinned) on every page
+        run: uv run python scripts/check_lighthouse.py
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (pinned version, checksum checked)
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfL -O "${base}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -O "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep "linux_x64.tar.gz" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c -
+          sudo tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -C /usr/local/bin gitleaks
+      - name: Scan the repository history (G9)
+        run: gitleaks detect --source . --config .gitleaks.toml --redact
+      - name: Planted fake key must fail the scan
+        run: |
+          mkdir planted
+          printf 'aws_access_key_id = "%s%s"\n' "AKIA" "QYLPMN5HHHFPZAM2" > planted/config.py
+          if gitleaks detect --no-git --source planted --config .gitleaks.toml --no-banner; then
+            echo "scan did not catch the planted key"; exit 1
+          fi
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run pytest tests/guardrails/test_g9_secret_scan.py
+
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: scripts/make_env.sh
+      - run: docker compose -f deploy/docker-compose.yml --env-file .env up -d --wait
+      - run: uv run pytest -m integration
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f deploy/docker-compose.yml --env-file .env logs --no-color --tail=100
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml --env-file .env down -v

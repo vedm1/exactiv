@@ -1,0 +1,141 @@
+/* Exaktiv design tokens v1.0 (18 Nov 2026). Source of truth: this file.
+   tokens.json and tokens.ts are generated from it: python3 brand/tokens/build_tokens.py
+   Layers: raw values -> role tokens (named by job) -> components. Components read role tokens only.
+   Load order: fonts/fonts.css, tokens/tokens.css, components/exaktiv.css. */
+
+:root {
+  /* raw: never use these in a component */
+  --ex-raw-paper: #F5F2EA;
+  --ex-raw-paper-raised: #FBFAF6;
+  --ex-raw-paper-shade: #ECE7DA;
+  --ex-raw-ink: #15140F;
+  --ex-raw-ink-80: #2B2A24;
+  --ex-raw-ink-70: #57544A;
+  --ex-raw-ink-50: #8E8A7C;
+  --ex-raw-rule-soft: #D9D3C4;
+  --ex-raw-cobalt: #2443E6;
+  --ex-raw-cobalt-light: #8FA3FF;
+  --ex-raw-vermilion: #FF4B1F;
+  --ex-raw-vermilion-deep: #C2360E;
+  --ex-raw-vermilion-light: #FF6A3D;
+  --ex-raw-marker: #E6FF3D;
+  --ex-raw-night: #11100D;
+  --ex-raw-night-raised: #1C1B17;
+  --ex-raw-night-rule: #3A3830;
+  --ex-raw-night-text-quiet: #A9A493;
+
+  /* roles: colour has a job */
+  --ex-ground: var(--ex-raw-paper);          /* page */
+  --ex-raised: var(--ex-raw-paper-raised);   /* inputs, panels, specimen boxes */
+  --ex-shade: var(--ex-raw-paper-shade);     /* hatching, early-access ground */
+  --ex-text: var(--ex-raw-ink);              /* all type */
+  --ex-text-body: var(--ex-raw-ink-80);      /* long body copy */
+  --ex-text-quiet: var(--ex-raw-ink-70);     /* captions, supporting text */
+  --ex-text-disabled: #6B675C;
+  --ex-rule: var(--ex-raw-ink);              /* 1.5 px rules and borders */
+  --ex-rule-soft: var(--ex-raw-rule-soft);   /* table rows, grid lines */
+  --ex-source: var(--ex-raw-cobalt);         /* footnotes, citations, links, focus */
+  --ex-on-source: var(--ex-raw-paper);
+  --ex-act: var(--ex-raw-vermilion);         /* primary button fill, logo dot */
+  --ex-on-act: var(--ex-raw-ink);            /* text on primary: never paper */
+  --ex-act-text: var(--ex-raw-vermilion-deep); /* error text, warnings in text */
+  --ex-evidence: var(--ex-raw-marker);       /* highlight band only */
+  --ex-on-evidence: var(--ex-raw-ink);
+  --ex-inverse: var(--ex-raw-ink);           /* footer, code panel */
+  --ex-on-inverse: var(--ex-raw-paper);
+  --ex-on-inverse-quiet: #C9C4B4;
+  --ex-on-inverse-faint: var(--ex-raw-ink-50);
+  --ex-source-on-inverse: var(--ex-raw-cobalt-light); /* links and refs on Ink panels */
+  --ex-dot: var(--ex-raw-vermilion);         /* the logo dot never changes */
+
+  /* type */
+  --ex-font-display: "Young Serif", Georgia, serif;           /* 400 only */
+  --ex-font: "Instrument Sans", system-ui, sans-serif;        /* 400 to 600 */
+  --ex-font-cite: "Gelasio", Georgia, serif;                  /* italic only */
+  --ex-size-display: clamp(3.25rem, 7vw, 6rem);
+  --ex-size-h1: clamp(2.5rem, 4.5vw, 4rem);
+  --ex-size-h2: clamp(1.875rem, 2.8vw, 2.5rem);
+  --ex-size-h3: 1.625rem;
+  --ex-size-lead: 1.25rem;
+  --ex-size-body: 1.0625rem;
+  --ex-size-cite: 1rem;
+  --ex-size-small: 0.9375rem;
+  --ex-lh-display: 0.98;   /* never tighter: the highlight band needs it */
+  --ex-lh-heading: 1.05;
+  --ex-lh-body: 1.55;
+  --ex-track-display: -0.035em;
+  --ex-track-h1: -0.025em;
+  --ex-track-h2: -0.02em;
+
+  /* evidence band: top and bottom of the highlighter stroke, in em */
+  --ex-band-top: 0.3em;
+  --ex-band-bottom: 1.02em;
+
+  /* space (4 px base) */
+  --ex-space-1: 4px;  --ex-space-2: 8px;  --ex-space-3: 12px; --ex-space-4: 16px;
+  --ex-space-6: 24px; --ex-space-8: 32px; --ex-space-12: 48px; --ex-space-16: 64px;
+  --ex-space-20: 80px; --ex-space-24: 96px;
+
+  /* shape and depth: no radius, no shadows, no blur */
+  --ex-rule-w: 1.5px;
+  --ex-accent-w: 6px;
+  --ex-radius: 0;
+  --ex-focus-w: 3px;
+  --ex-focus-offset: 3px;
+  --ex-control-h: 52px;
+  --ex-input-h: 48px;
+
+  /* layout and motion */
+  --ex-max: 1280px;
+  --ex-gutter: 24px;
+  --ex-measure: 68ch;
+  --ex-ease: cubic-bezier(0.2, 0, 0, 1);
+  --ex-dur: 120ms;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ex-ground: var(--ex-raw-night);
+    --ex-raised: var(--ex-raw-night-raised);
+    --ex-shade: #26241E;
+    --ex-text: var(--ex-raw-paper);
+    --ex-text-body: #E4E0D5;
+    --ex-text-quiet: var(--ex-raw-night-text-quiet);
+    --ex-text-disabled: #8E8A7C;
+    --ex-rule: var(--ex-raw-paper);
+    --ex-rule-soft: var(--ex-raw-night-rule);
+    --ex-source: var(--ex-raw-cobalt-light);
+    --ex-on-source: var(--ex-raw-night);
+    --ex-act: var(--ex-raw-vermilion-light);
+    --ex-on-act: var(--ex-raw-night);
+    --ex-act-text: var(--ex-raw-vermilion-light);
+    --ex-inverse: var(--ex-raw-night-raised);
+  }
+}
+:root[data-theme="dark"] {
+  --ex-ground: var(--ex-raw-night);
+  --ex-raised: var(--ex-raw-night-raised);
+  --ex-shade: #26241E;
+  --ex-text: var(--ex-raw-paper);
+  --ex-text-body: #E4E0D5;
+  --ex-text-quiet: var(--ex-raw-night-text-quiet);
+  --ex-text-disabled: #8E8A7C;
+  --ex-rule: var(--ex-raw-paper);
+  --ex-rule-soft: var(--ex-raw-night-rule);
+  --ex-source: var(--ex-raw-cobalt-light);
+  --ex-on-source: var(--ex-raw-night);
+  --ex-act: var(--ex-raw-vermilion-light);
+  --ex-on-act: var(--ex-raw-night);
+  --ex-act-text: var(--ex-raw-vermilion-light);
+  --ex-inverse: var(--ex-raw-night-raised);
+}
+
+@media print {
+  :root, :root[data-theme="dark"] { --ex-ground: #FFFFFF; --ex-raised: #FFFFFF; --ex-text: var(--ex-raw-ink); --ex-rule: var(--ex-raw-ink); --ex-source: var(--ex-raw-cobalt); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --ex-dur: 0ms; }
+}

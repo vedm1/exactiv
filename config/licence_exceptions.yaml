@@ -1,0 +1,3 @@
+version: 1
+# Each exception: {package: name, licence: text, reason: text, approved_on: YYYY-MM-DD}
+exceptions: []

@@ -1,0 +1,49 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Legacy code, explained before it is changed.</h1>{% endblock %}
+{% block lead %}The people who wrote the code have left. The documentation is old. Every change is a risk. We make it a checked one.{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>A method in three stages.</h2>
+      <ol class="ex-steps">
+        <li><h3>Assess</h3><p>Three to four weeks at a fixed price. AI-assisted reverse engineering into a traceable specification, a system map, a risk register, target architecture options and a roadmap.</p></li>
+        <li><h3>Pilot</h3><p>Modernise one module end to end, with tests that prove the old and the new behave the same.</p></li>
+        <li><h3>Modernise</h3><p>Scale the method, module by module, with your team.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>A finding you can check.</h2>
+      <figure class="ex-finding">
+        <div class="ex-code" aria-label="Code excerpt, billing/Invoice.java lines 140 to 144">
+          <div class="ex-code__file">billing/Invoice.java</div>
+          <span class="ex-code__line"><span class="ex-code__ln">140</span>public void cancel() {</span>
+          <span class="ex-code__line"><span class="ex-code__ln">141</span>  if (status == PAID) return;</span>
+          <span class="ex-code__line ex-code__line--hit"><span class="ex-code__ln">142</span>  if (payments.isEmpty())</span>
+          <span class="ex-code__line"><span class="ex-code__ln">143</span>    status = CANCELLED;</span>
+          <span class="ex-code__line"><span class="ex-code__ln">144</span>}</span>
+        </div>
+        <figcaption class="ex-finding__spec">
+          <p class="ex-finding__claim">An invoice is cancelled only when {{ backed('findings-sourced', 'no payment is booked') }} against it.</p>
+          <p class="ex-finding__src">billing/Invoice.java, line 142</p>
+        </figcaption>
+      </figure>
+      <p class="ex-quiet">Invented, generic code. It shows the form of a finding, not client code.</p>
+    </div>
+  </section>
+
+  <section class="ex-section" id="why-now">
+    <div class="ex-wrap">
+      <h2>Why now: EU rules for software vendors.</h2>
+      <div class="ex-pillars">
+        <div class="ex-pillar"><p>{{ claim('eu-cra') }} {{ source_link('eu-cra', 'Source') }}</p></div>
+        <div class="ex-pillar"><p>{{ claim('eu-data-act') }} {{ source_link('eu-data-act', 'Source') }}</p></div>
+        <div class="ex-pillar"><p>{{ claim('eu-nis2') }} {{ source_link('eu-nis2', 'Source') }}</p></div>
+        <div class="ex-pillar"><p>{{ claim('eu-ai-act') }} {{ source_link('eu-ai-act', 'Source') }}</p></div>
+      </div>
+      <p class="ex-notice ex-notice--legal">This is general information, not legal advice.</p>
+    </div>
+  </section>
+{% endblock %}

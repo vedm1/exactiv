@@ -1,0 +1,12 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Tell us what you need.</h1>{% endblock %}
+{% block lead %}{{ backed('reply-time', 'We reply within 1 business day.') }}{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Write to us.</h2>
+      <p class="ex-measure">Email <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>. Say what you need, which topic it falls under and where your data is: EU or UK, India or elsewhere. That tells us which region to set up.</p>
+      <p class="ex-notice"><b>No cookies.</b> This site sets none and loads nothing from third parties. We use your details only to reply to you. See our <a href="/privacy/">privacy notice</a>.</p>
+    </div>
+  </section>
+{% endblock %}

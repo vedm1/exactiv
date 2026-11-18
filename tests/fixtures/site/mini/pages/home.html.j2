@@ -1,0 +1,6 @@
+{% extends "base.html.j2" %}
+{% block content %}
+<h1 class="ex-display">Fixture <span class="ex-mark">home.</span>{{ cite('ready-claim') }}</h1>
+<p>{{ claim('open-claim') }}</p>
+<p>{{ claim('why-claim') }} {{ source_link('why-claim', 'Source') }}</p>
+{% endblock %}

@@ -24,7 +24,7 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 | Model gateway | LiteLLM, image pinned by digest. Never a floating tag. |
 | Fine-tuning | PEFT/LoRA on an Apache 2.0 or MIT base model only. |
 | Datastore | PostgreSQL 16. Object storage: S3-compatible (MinIO locally). |
-| UI | React + TypeScript, Personal Design System tokens. |
+| UI | React + TypeScript, Exaktiv brand package tokens and components (`brand/`, phases EXD1 to EXD5). |
 | Hosting | Local docker-compose first. EU: Hetzner Germany (EXK0b). India: provider to choose (EXK0c). **Server cost limit: $10 per month per region.** Model API and GPU costs are tracked separately. |
 | Commands | Python: `uv run pytest`, `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`. UI: `pnpm test`, `pnpm lint`, `pnpm typecheck`. Stack: `docker compose up -d`. |
 
@@ -63,6 +63,14 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 - **B-G4** The supplier approves before any upload to a pool.
 - **B-G5** One supplier's values never fill another supplier's SKUs.
 
+## Website guardrails (PRD-W §2, §6)
+
+- **W-G1** No personal, employer or client names on the site, including metadata, file names and alt text. Grep check with a name list kept outside the repository.
+- **W-G2** No claim without evidence. A claim appears only when its PRD-W claims register status is "Ready". The EXD5 build fails on a banned claim.
+- **W-G3** No cookies and no requests to third-party domains on any page. Browser check in EXD5 and EXW3.
+- **W-G4** Form submissions are stored in the EU region only and deleted after 6 months. Unit tests for region and retention (EXW1).
+- **W-G5** Legal pages name Valyrian Tech Pvt Ltd and no person.
+
 ## Single source of record per field
 
 | Data | Authoritative source | Cross-check |
@@ -76,10 +84,17 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 | Tenant region | Tenant configuration | Router check on every call |
 | Every state change | Append-only event log (from EXK1) | Evidence pack (EXK8) |
 
-## Design system (UI and HTML reports)
+## Design system (UI, reports, PDFs, website)
 
-Use the Personal Design System tokens as the source of truth: teal accent, Inter (sans) + Lora (serif) + JetBrains Mono, dark mode default with a light mirror, chevron logo mark. Keep tokens in `ui/src/tokens/`. Do not hard-code hex values in components.
+Use the Exaktiv brand package in `brand/` as the only source of truth. Read `brand/README.md` before UI, report or page work. The Personal Design System is retired: no teal, Inter, Lora, JetBrains Mono or chevron mark.
+
+- **Colour has a job.** Cobalt `--ex-source` = source (footnotes, citations, links, focus). Vermilion `--ex-act` = act (one primary button per screen, Ink text on it). Marker `--ex-evidence` = evidence band behind backed words only.
+- **Role tokens only.** Components use `--ex-*` role tokens (or `ex.*` from `tokens.ts`). No hex values, no `--ex-raw-*` tokens, radius 0, no shadows, no blur.
+- **Type.** Young Serif (400 only) for headings, Instrument Sans for body and UI, Gelasio italic for citations. No monospace anywhere. Set `font-synthesis: none`. Use tabular figures only in tables and line numbers.
+- **No kickers.** No uppercase labels, tags or section numbers above a heading.
+- **The Trace.** A footnote number appears only when the claim has a source (G1 applied to the UI and the website).
+- **Change tokens** in `brand/tokens/tokens.css` only, then run `python3 brand/tokens/build_tokens.py`. `python3 brand/tokens/check_brand.py` must pass before a commit (CI gate from EXD2).
 
 ## Quality bar for high-stakes work
 
-These phases need an independent subagent review before "done": EXK2 (region), EXK3 (G1), EXK4 (G3/G4), EXK5 (G2), EXK9-p2 (G10), EXK10 (G5), EXK11 (G6), EXC4b (A-G4), EXC5 (A-G3), EXC9, EXP5 (B-G3).
+These phases need an independent subagent review before "done": EXK2 (region), EXK3 (G1), EXK4 (G3/G4), EXK5 (G2), EXK9-p2 (G10), EXK10 (G5), EXK11 (G6), EXC4b (A-G4), EXC5 (A-G3), EXC9, EXP5 (B-G3), EXW1 (W-G4), EXW3 (W-G1, W-G2, W-G3).

@@ -1,5 +1,13 @@
 PHASES_DASHBOARD.html
 .env
 .venv/
-node_modules/
 __pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+node_modules/
+ui/dist/
+*.egg-info/
+.DS_Store
+site/dist/

@@ -1,0 +1,24 @@
+version: 1
+claims:
+  - id: ready-claim
+    text: "We reply within one working day."
+    status: ready
+    evidence: "Inbox routine"
+    cite: "Inbox routine, synthetic fixture."
+    pages: [home]
+  - id: open-claim
+    text: "Models run in your region."
+    status: to_confirm
+    evidence: "Region register"
+    pages: [home]
+  - id: why-claim
+    text: "A synthetic rule applies from 2099."
+    status: to_confirm
+    evidence: "Source page"
+    source_url: "https://rules.example.org/a"
+    pages: [home]
+banned:
+  - {id: gdpr-compliant, pattern: '(?i)GDPR[\s-]+(compliant|certified)'}
+  - {id: trusted-by, pattern: '(?i)\btrusted by\b'}
+external_allow:
+  - {url: "https://rules.example.org/a", claim: why-claim}

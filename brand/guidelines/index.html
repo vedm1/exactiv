@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exaktiv brand guidelines</title>
+<meta name="description" content="Exaktiv brand guidelines v1.0: the idea, logo, colour, type, the Trace, components and tokens.">
+<link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon/favicon.ico" sizes="any">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="../components/exaktiv.css">
+<style>
+/* Page-only layout for the guide. Components come from exaktiv.css. Raw tokens are allowed here
+   because this page documents them. */
+.g-grid { display: grid; gap: var(--ex-space-6); }
+.g-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.g-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.g-5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: var(--ex-rule-w) solid var(--ex-rule); gap: 0; }
+.g-tile { border: var(--ex-rule-w) solid var(--ex-rule); min-block-size: 200px; display: flex; align-items: center; justify-content: center; padding: var(--ex-space-8); }
+.g-tile img { max-inline-size: 100%; block-size: auto; }
+.g-cap { font-size: var(--ex-size-small); color: var(--ex-text-quiet); margin-top: var(--ex-space-3); }
+.g-sw { display: flex; flex-direction: column; border-right: var(--ex-rule-w) solid var(--ex-rule); }
+.g-sw:last-child { border-right: 0; }
+.g-sw__chip { block-size: 160px; padding: var(--ex-space-4); display: flex; align-items: flex-end; font-family: var(--ex-font-display); font-size: 2rem; border-bottom: var(--ex-rule-w) solid var(--ex-rule); }
+.g-sw__meta { padding: var(--ex-space-4); display: flex; flex-direction: column; gap: 6px; font-size: var(--ex-size-small); }
+.g-sw__meta b { font-size: 1rem; }
+.g-spec { border: var(--ex-rule-w) solid var(--ex-rule); background: var(--ex-raised); padding: var(--ex-space-8); display: flex; flex-direction: column; gap: var(--ex-space-6); }
+.g-dont { position: relative; padding-right: 40px; }
+.g-dont::after { content: "✕"; position: absolute; top: 8px; right: 12px; color: var(--ex-act-text); font-weight: 700; }
+.g-files code { font-family: var(--ex-font); font-weight: 600; color: var(--ex-source); }
+.g-toc { display: flex; flex-wrap: wrap; gap: var(--ex-space-2) var(--ex-space-6); font-size: var(--ex-size-small); }
+</style>
+</head>
+<body>
+
+<header class="ex-header">
+  <div class="ex-header__in">
+    <a class="ex-header__logo" href="#top" aria-label="Exaktiv brand guidelines, top"><img src="../logo/svg/exaktiv-lockup.svg" alt="Exaktiv" width="140" height="30"></a>
+    <nav class="ex-nav" aria-label="Guide sections">
+      <a href="#logo">Logo</a><a href="#colour">Colour</a><a href="#type">Type</a><a href="#trace">The Trace</a><a href="#components">Components</a><a href="#tokens">Tokens</a>
+    </nav>
+    <a class="ex-btn ex-btn--primary ex-btn--go ex-header__cta" href="#files">Get the files</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="ex-hero">
+    <div class="ex-hero__in">
+      <div class="ex-hero__text">
+        <h1 class="ex-display">A brand that <span class="ex-mark">cites itself.</span><a class="ex-ref" href="#c1">1</a></h1>
+        <p class="ex-lead">Exaktiv sells one idea: no value without a source. So the brand does the same. Every claim on the site carries a footnote. Every colour has one job. Every page reads like a document a reviewer can check.</p>
+        <ol class="ex-cites"><li id="c1"><span class="ex-cite__n">1</span>PRD-W, section 6, the claims register. A claim goes on the site only when its evidence exists.</li></ol>
+      </div>
+      <div class="ex-hero__aside">
+        <p class="ex-note" style="font-size:1.5rem;line-height:1.3">The footnote is the logo in action: a value, a leader line, and the file it came from.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Three rules hold the whole system.</h2>
+      <div class="ex-pillars">
+        <div class="ex-pillar"><h3>Every claim carries a source.</h3><p>Numbers, promises and pillars get a cobalt footnote that leads to evidence. No footnote, no claim.</p></div>
+        <div class="ex-pillar"><h3>Colour has a job.</h3><p>Cobalt means source. Vermilion means act. Marker means evidence. Nothing is decoration.</p></div>
+        <div class="ex-pillar"><h3>Headings do the work.</h3><p>No kickers, tags or numbers above a title. No monospace. Hard rules and square corners hold the page.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section" id="logo">
+    <div class="ex-wrap">
+      <h2>The Leader mark.</h2>
+      <p class="ex-measure">A file, with one line cut out of it. The line leaves the file as a leader and ends at a vermilion dot: the finding. <b>The file</b> is an ink square. <b>The line</b> is a cut at line height. <b>The finding</b> is the only warm colour in the mark. The wordmark is Young Serif, outlined in every logo file, so it never depends on an installed font.</p>
+      <div class="g-grid g-3">
+        <div><div class="g-tile" style="background:var(--ex-raw-paper)"><img src="../logo/svg/exaktiv-lockup.svg" alt="Exaktiv lockup on Paper" width="274" height="60"></div><p class="g-cap"><b>Primary on Paper.</b> The default everywhere.</p></div>
+        <div><div class="g-tile" style="background:var(--ex-raw-ink)"><img src="../logo/svg/exaktiv-lockup-reversed.svg" alt="Exaktiv lockup reversed on Ink" width="274" height="60"></div><p class="g-cap"><b>Reversed on Ink or Night.</b> Footer and dark mode.</p></div>
+        <div><div class="g-tile" style="background:var(--ex-raw-cobalt)"><img src="../logo/svg/exaktiv-lockup-reversed.svg" alt="Exaktiv lockup reversed on Cobalt" width="274" height="60"></div><p class="g-cap"><b>On Cobalt.</b> Security pack covers only.</p></div>
+        <div><div class="g-tile" style="background:var(--ex-raw-paper)"><img src="../logo/svg/exaktiv-stacked.svg" alt="Exaktiv stacked lockup" width="170" height="100"></div><p class="g-cap"><b>Stacked.</b> Square formats and social avatars.</p></div>
+        <div><div class="g-tile" style="background:var(--ex-raw-paper)"><img src="../logo/svg/exaktiv-mark.svg" alt="Exaktiv mark" width="120" height="106"></div><p class="g-cap"><b>Mark only.</b> When the name is already on the page.</p></div>
+        <div><div class="g-tile" style="gap:24px;background:var(--ex-raw-paper)"><img src="../favicon/favicon.svg" alt="Favicon at 32 px" width="32" height="32"><img src="../favicon/favicon-16.png" alt="Favicon at 16 px" width="16" height="16"><img src="../favicon/icon-192.png" alt="App icon" width="64" height="64"></div><p class="g-cap"><b>Favicon and app icon.</b> Below 24 px drop the leader; below 16 px drop the line. The dot stays.</p></div>
+      </div>
+      <p class="ex-measure">Keep two dots of clear space on all sides. The lockup is never narrower than 96 px on screen or 22 mm in print.</p>
+      <h3>Never</h3>
+      <div class="g-grid g-3">
+        <p class="ex-notice g-dont">Recolour the dot. It is vermilion on every ground.</p>
+        <p class="ex-notice g-dont">Rotate or mirror the mark. The leader always rises to the right.</p>
+        <p class="ex-notice g-dont">Round the corners or add a shadow, outline or gradient.</p>
+        <p class="ex-notice g-dont">Put the logo on Marker. Marker is for evidence only.</p>
+        <p class="ex-notice g-dont">Retype the wordmark. Use the outlined SVG files.</p>
+        <p class="ex-notice g-dont">Pair it with a person's name, photo or a "by" line (PRD-W constraint 1).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section" id="colour">
+    <div class="ex-wrap">
+      <h2>Five colours. Each one has a job.</h2>
+      <div class="g-5">
+        <div class="g-sw"><div class="g-sw__chip" style="background:var(--ex-raw-paper);color:var(--ex-raw-ink)">Paper</div><div class="g-sw__meta"><b>#F5F2EA</b><span>The ground of every light page.</span></div></div>
+        <div class="g-sw"><div class="g-sw__chip" style="background:var(--ex-raw-ink);color:var(--ex-raw-paper)">Ink</div><div class="g-sw__meta"><b>#15140F</b><span>All type, all rules, the mark. Quiet text #57544A.</span></div></div>
+        <div class="g-sw"><div class="g-sw__chip" style="background:var(--ex-raw-cobalt);color:var(--ex-raw-paper)">Cobalt</div><div class="g-sw__meta"><b>#2443E6</b><span>The source: footnotes, citations, links, focus.</span></div></div>
+        <div class="g-sw"><div class="g-sw__chip" style="background:var(--ex-raw-vermilion);color:var(--ex-raw-ink)">Vermilion</div><div class="g-sw__meta"><b>#FF4B1F</b><span>Act: primary buttons, the dot. Text and errors use #C2360E.</span></div></div>
+        <div class="g-sw"><div class="g-sw__chip" style="background:var(--ex-raw-marker);color:var(--ex-raw-ink)">Marker</div><div class="g-sw__meta"><b>#E6FF3D</b><span>The evidence. A band behind backed words only.</span></div></div>
+      </div>
+      <p class="ex-measure">Proportion on a page: Paper 70%, Ink 20%, Cobalt 5%, Vermilion 3%, Marker 2%. One vermilion button per screen. Never put Paper text on Vermilion (3.5:1) or use Vermilion or Marker as a text colour on Paper. Dark mode follows the system setting or <code>data-theme="dark"</code>: Night #11100D, Cobalt lifts to #8FA3FF, Vermilion to #FF6A3D. <code>check_brand.py</code> tests 30 text pairs against WCAG 2.2 AA.</p>
+    </div>
+  </section>
+
+  <section class="ex-section" id="type">
+    <div class="ex-wrap">
+      <h2>Three faces, three jobs.</h2>
+      <div class="g-grid g-3">
+        <div class="g-spec"><span class="ex-display" style="font-size:6rem">Aa</span><p><b>Young Serif</b> for the wordmark, every heading and pull quotes. One weight (400), so hierarchy comes from size and space.</p></div>
+        <div class="g-spec"><span style="font-size:6rem;font-weight:600;line-height:1">Aa</span><p><b>Instrument Sans</b> for body, buttons, forms, tables and navigation, at 400, 500 and 600.</p></div>
+        <div class="g-spec"><span class="ex-note" style="font-size:6rem;line-height:1;color:var(--ex-source)">Aa</span><p><b>Gelasio italic</b> for citations, footnotes and margin notes. Never a heading, never a button.</p></div>
+      </div>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Role</th><th>Desktop / mobile</th><th>Sample</th></tr></thead>
+          <tbody>
+            <tr><td>Display</td><td class="ex-tnum">96 / 52</td><td><span class="ex-display" style="font-size:3rem">AI you can audit.</span></td></tr>
+            <tr><td>Heading 1</td><td class="ex-tnum">64 / 40</td><td><span class="ex-h1" style="font-family:var(--ex-font-display);font-size:2.25rem">Your code stays where you say.</span></td></tr>
+            <tr><td>Heading 2</td><td class="ex-tnum">40 / 30</td><td><span style="font-family:var(--ex-font-display);font-size:1.75rem">Assess, pilot, modernise.</span></td></tr>
+            <tr><td>Heading 3</td><td class="ex-tnum">26 / 22</td><td><span style="font-family:var(--ex-font-display);font-size:1.5rem">A specification you can check</span></td></tr>
+            <tr><td>Lead</td><td class="ex-tnum">20 / 18</td><td style="font-weight:400;font-size:1.25rem">The people who wrote the code have left.</td></tr>
+            <tr><td>Body</td><td class="ex-tnum">17 / 16</td><td style="font-weight:400">Every change is a risk. We make it a checked one.</td></tr>
+            <tr><td>Citation</td><td class="ex-tnum">16 / 15</td><td class="ex-cite" style="font-weight:400">Invoice.java, line 142.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ex-measure">Display and heading line height is 0.98 to 1.05, never tighter, because the evidence band needs room. Tabular figures only in tables and line numbers: in running text they widen every full stop. Every page sets <code>font-synthesis: none</code>.</p>
+    </div>
+  </section>
+
+  <section class="ex-section" id="trace">
+    <div class="ex-wrap">
+      <h2>The Trace: claim, number, source.</h2>
+      <div class="g-grid g-2">
+        <div class="g-spec">
+          <p class="ex-h2" style="font-family:var(--ex-font-display)">AI processing <span class="ex-mark">stays in your region.</span><a class="ex-ref" href="#c2">2</a></p>
+          <ol class="ex-cites"><li id="c2"><span class="ex-cite__n">2</span>Region register of model endpoints, security pack, part 3.</li></ol>
+        </div>
+        <ol style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:12px">
+          <li><b>The evidence band</b> (<code>.ex-mark</code>) sits behind the exact words the evidence backs, never the whole sentence.</li>
+          <li><b>The number</b> (<code>.ex-ref</code>) is a cobalt superscript in Instrument Sans, counted per page, and links to its citation.</li>
+          <li><b>The citation</b> (<code>.ex-cites</code>) sits under a cobalt rule in Gelasio italic. It links to the evidence, or names where a reviewer gets it.</li>
+          <li><b>The gate.</b> A claim gets a number only when its claims-register status is "Ready". No evidence, no number, no claim.</li>
+        </ol>
+      </div>
+      <figure class="ex-finding">
+        <div class="ex-code" aria-label="Code excerpt, Invoice.java lines 140 to 144">
+          <div class="ex-code__file">Invoice.java</div>
+          <span class="ex-code__line"><span class="ex-code__ln">140</span>public void cancel() {</span>
+          <span class="ex-code__line"><span class="ex-code__ln">141</span>  if (status == PAID) return;</span>
+          <span class="ex-code__line ex-code__line--hit"><span class="ex-code__ln">142</span>  if (payments.isEmpty())</span>
+          <span class="ex-code__line"><span class="ex-code__ln">143</span>    status = CANCELLED;</span>
+          <span class="ex-code__line"><span class="ex-code__ln">144</span>}</span>
+        </div>
+        <figcaption class="ex-finding__spec">
+          <p class="ex-finding__claim">An invoice is cancelled only when <span class="ex-mark">no payment is booked</span> against it.</p>
+          <p class="ex-finding__src">Invoice.java, line 142</p>
+        </figcaption>
+      </figure>
+      <p class="ex-quiet">Invented, generic code only. Never client code.</p>
+    </div>
+  </section>
+
+  <section class="ex-section" id="components">
+    <div class="ex-wrap">
+      <h2>The parts.</h2>
+      <h3>Buttons and links</h3>
+      <div class="ex-actions">
+        <a class="ex-btn ex-btn--primary ex-btn--go" href="#">Talk to us</a>
+        <a class="ex-btn" href="#">See how we work</a>
+        <button class="ex-btn" type="button" disabled>Not yet</button>
+        <a class="ex-link--go" href="#">Request an assessment</a>
+      </div>
+      <h3>Capability cards</h3>
+      <div class="ex-cards">
+        <article class="ex-card"><h3>Legacy Modernisation</h3><p>Turn code that nobody understands into a specification you can check, line by line. Then modernise in safe stages.</p><a class="ex-link--go" href="#">Request an assessment</a></article>
+        <article class="ex-card"><h3>AI Product Delivery</h3><p>Go from an AI idea to a feature your customers use, with senior product leadership when you need it.</p><a class="ex-link--go" href="#">Book a call</a></article>
+        <article class="ex-card ex-card--early"><h3>Exaktiv Product Data</h3><p>Structured product data from supplier datasheets. Every value links to its page. In early access now.</p><a class="ex-link--go" href="#">Join early access</a></article>
+      </div>
+      <h3>Steps</h3>
+      <ol class="ex-steps">
+        <li><h3>Assess</h3><p>Three to four weeks at a fixed price. A traceable specification, a system map, a risk register and a roadmap.</p></li>
+        <li><h3>Pilot</h3><p>One module end to end, with tests that prove the old and the new behave the same.</p></li>
+        <li><h3>Modernise</h3><p>Scale the method module by module, with your team.</p></li>
+      </ol>
+      <h3>Region table</h3>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Your data</th><th>Files stored in</th><th>Models run in</th><th>Fallback</th></tr></thead>
+          <tbody>
+            <tr><td>EU or UK</td><td>EU region</td><td>EU endpoints only</td><td><b>Never.</b> The task stops and goes to a person.</td></tr>
+            <tr><td>India</td><td>India region</td><td>India endpoints only</td><td><b>Never.</b></td></tr>
+            <tr><td>Other</td><td>Agreed in the contract</td><td>Agreed in the contract</td><td><b>Never.</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Form</h3>
+      <form class="ex-form" action="#" onsubmit="return false" novalidate>
+        <div class="ex-field"><label for="g-name">Name</label><input class="ex-input" id="g-name" autocomplete="name"></div>
+        <div class="ex-field"><label for="g-mail">Work email</label><input class="ex-input" id="g-mail" type="email" autocomplete="email"></div>
+        <div class="ex-field ex-field--error"><label for="g-co">Company</label><input class="ex-input" id="g-co" value="A" aria-invalid="true" aria-describedby="g-co-e"><span class="ex-field__error" id="g-co-e">Use 2 to 150 characters.</span></div>
+        <div class="ex-field"><label for="g-topic">Topic</label><select class="ex-select" id="g-topic"><option>Legacy modernisation</option><option>AI product delivery</option><option>Product data early access</option><option>Partnership</option><option>Other</option></select></div>
+        <div class="ex-field"><label for="g-region">Where is your data? <span class="ex-field__opt">(optional)</span></label><select class="ex-select" id="g-region"><option>EU or UK</option><option>India</option><option>Other</option></select></div>
+        <div class="ex-field ex-field--wide"><label for="g-msg">Message</label><textarea class="ex-textarea" id="g-msg"></textarea></div>
+        <div class="ex-honeypot" aria-hidden="true"><label for="g-hp">Leave empty</label><input id="g-hp" tabindex="-1" autocomplete="off"></div>
+        <div class="ex-form__send"><button class="ex-btn ex-btn--primary ex-btn--go" type="submit">Send</button><span class="ex-quiet">We use your details only to reply to you. See our <a href="#">privacy notice</a>.</span></div>
+      </form>
+      <h3>Notices</h3>
+      <div class="g-grid g-3">
+        <p class="ex-notice"><b>No cookies.</b> This site sets none and loads nothing from third parties.</p>
+        <p class="ex-notice ex-notice--ok"><b>Sent.</b> A person replies within 1 business day.</p>
+        <p class="ex-notice ex-notice--legal">This is general information, not legal advice.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section" id="tokens">
+    <div class="ex-wrap">
+      <h2>Tokens in three layers.</h2>
+      <p class="ex-measure">Raw values (<code>--ex-raw-*</code>) feed role tokens named by job (<code>--ex-source</code>, <code>--ex-act</code>, <code>--ex-evidence</code>). Components read role tokens only, and dark mode swaps roles, never raw values. <code>tokens/tokens.css</code> is the source of truth; <code>build_tokens.py</code> generates <code>tokens.json</code> (W3C design tokens format) and <code>tokens.ts</code>.</p>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Role token</th><th>Light</th><th>Dark</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>--ex-ground</td><td class="ex-tnum">#F5F2EA</td><td class="ex-tnum">#11100D</td><td style="font-weight:400">Page</td></tr>
+            <tr><td>--ex-text</td><td class="ex-tnum">#15140F</td><td class="ex-tnum">#F5F2EA</td><td style="font-weight:400">All type</td></tr>
+            <tr><td>--ex-text-quiet</td><td class="ex-tnum">#57544A</td><td class="ex-tnum">#A9A493</td><td style="font-weight:400">Supporting text</td></tr>
+            <tr><td>--ex-source</td><td class="ex-tnum">#2443E6</td><td class="ex-tnum">#8FA3FF</td><td style="font-weight:400">Footnotes, links, focus</td></tr>
+            <tr><td>--ex-act</td><td class="ex-tnum">#FF4B1F</td><td class="ex-tnum">#FF6A3D</td><td style="font-weight:400">Primary fill</td></tr>
+            <tr><td>--ex-act-text</td><td class="ex-tnum">#C2360E</td><td class="ex-tnum">#FF6A3D</td><td style="font-weight:400">Error text</td></tr>
+            <tr><td>--ex-evidence</td><td class="ex-tnum">#E6FF3D</td><td class="ex-tnum">#E6FF3D</td><td style="font-weight:400">Highlight band only</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ex-measure">Space runs on a 4 px base (4 to 96). Rules are 1.5 px, accent edges 6 px, focus rings 3 px with a 3 px gap. Radius is 0. No shadows, no blur, no gradients except the evidence band. Maximum width 1280 px, gutter 24 px, 68 characters per body line, transitions 120 ms.</p>
+    </div>
+  </section>
+
+  <section class="ex-section g-files" id="files">
+    <div class="ex-wrap">
+      <h2>The files.</h2>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Folder</th><th>What is in it</th></tr></thead>
+          <tbody>
+            <tr><td><code>logo/svg</code></td><td style="font-weight:400">Mark, lockup, stacked lockup and wordmark, in normal and reversed versions. Text is outlined.</td></tr>
+            <tr><td><code>logo/png</code></td><td style="font-weight:400">Each SVG at three widths, transparent background.</td></tr>
+            <tr><td><code>favicon</code></td><td style="font-weight:400">favicon.svg, favicon.ico (16, 32, 48), PNGs, apple-touch-icon, 192 and 512 icons, site.webmanifest.</td></tr>
+            <tr><td><code>social</code></td><td style="font-weight:400">Open Graph image, 1200 × 630.</td></tr>
+            <tr><td><code>fonts</code></td><td style="font-weight:400">Self-hosted woff2 files, fonts.css and the three OFL licences.</td></tr>
+            <tr><td><code>tokens</code></td><td style="font-weight:400">tokens.css (source), tokens.json, tokens.ts, build_tokens.py, check_brand.py.</td></tr>
+            <tr><td><code>components</code></td><td style="font-weight:400">exaktiv.css: base styles and every component on this page.</td></tr>
+            <tr><td><code>icons</code></td><td style="font-weight:400">arrow-right.svg, used by buttons and links (the fonts have no arrow glyph).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="ex-footer">
+  <div class="ex-footer__in">
+    <img src="../logo/svg/exaktiv-lockup-reversed.svg" alt="Exaktiv" width="120" height="26">
+    <span class="ex-footer__legal">© 2026 Valyrian Tech Pvt Ltd. Exaktiv is a brand of Valyrian Tech Pvt Ltd.</span>
+    <span class="ex-footer__links"><a href="#top">Back to top</a></span>
+  </div>
+</footer>
+</body>
+</html>

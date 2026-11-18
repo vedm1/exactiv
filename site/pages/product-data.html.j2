@@ -1,0 +1,18 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Product data from supplier datasheets.</h1>{% endblock %}
+{% block lead %}Exaktiv Product Data turns a supplier’s datasheets into structured product data. Every value links to the page it came from.{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <p class="ex-notice"><b>Early access.</b> Exaktiv Product Data is not a self-serve product. Tell us about your catalogue and we add you to the early access list.</p>
+      <h2>What it does.</h2>
+      <ol class="ex-steps">
+        <li><h3>Read</h3><p>It reads your datasheets, including scans and tables.</p></li>
+        <li><h3>Extract</h3><p>It proposes a value for each field and links it to its page and area.</p></li>
+        <li><h3>Review</h3><p>A person checks each doubtful value against the page before it is accepted.</p></li>
+      </ol>
+      <h2>Who it is for.</h2>
+      <p class="ex-measure">Suppliers and manufacturers of technical products who must deliver structured product data to their customers and to data pools, and who want to check every value.</p>
+    </div>
+  </section>
+{% endblock %}

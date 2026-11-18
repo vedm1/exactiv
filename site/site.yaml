@@ -1,0 +1,9 @@
+# Site settings (EXD5). Values marked placeholder are open decisions in PRD-W section 11.
+version: 1
+base_url: "https://exaktiv.invalid"          # placeholder: decision D1 (domain). `--launch` fails while it says .invalid
+legal_name: "Valyrian Tech Pvt Ltd"
+brand: "Exaktiv"
+lang: "en-GB"
+contact_email: "hello@exaktiv.invalid"        # placeholder: decision D6 (mail on the site domain)
+security_email: "security@exaktiv.invalid"    # placeholder: decision D6
+security_expires: "2027-06-30"                # RFC 9116: renew before this date, at most one year ahead

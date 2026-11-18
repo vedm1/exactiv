@@ -1,0 +1,44 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1 class="ex-display">AI you can {{ backed('findings-sourced', 'audit.') }}</h1>{% endblock %}
+{% block lead %}We modernise legacy software and ship AI products. Every finding links to its source. Your data stays in your region.{% endblock %}
+{% block aside_wrap %}
+      <div class="ex-hero__aside">
+        <p class="ex-note">Every value we give you carries the file, the line and the page it came from.</p>
+      </div>
+{% endblock %}
+{% block content %}
+  <section class="ex-section" id="capabilities">
+    <div class="ex-wrap">
+      <h2>Three ways we work with you.</h2>
+      <div class="ex-cards">
+        <article class="ex-card"><h3>Legacy Modernisation</h3><p>Turn code that nobody understands into a specification you can check, line by line. Then modernise in safe stages.</p><a class="ex-link--go" href="/legacy-modernisation/">Request an assessment</a></article>
+        <article class="ex-card"><h3>AI Product Delivery</h3><p>Go from an AI idea to a feature your customers use, with senior product leadership when you need it.</p><a class="ex-link--go" href="/ai-product-delivery/">Book a call</a></article>
+        <article class="ex-card ex-card--early"><h3>Exaktiv Product Data</h3><p>Structured product data from supplier datasheets. Every value links to its page. In early access.</p><a class="ex-link--go" href="/product-data/">Join early access</a></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section" id="pillars">
+    <div class="ex-wrap">
+      <h2>Four rules hold every engagement.</h2>
+      <div class="ex-pillars">
+        <div class="ex-pillar"><h3>Traceable</h3><p>Every finding links to its source: a file and a line in code, or a page and an area in a document.</p></div>
+        <div class="ex-pillar"><h3>In-region</h3><p>{{ backed('in-region', 'AI processing stays in the client’s region.') }} EU data stays in the EU. India data stays in India. There is no fallback to another region.</p></div>
+        <div class="ex-pillar"><h3>Private</h3><p>{{ backed('no-training', 'We never train models on a client’s code or data.') }} One client’s data never helps another client.</p></div>
+        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change, release or decision happens without a human approval.') }}</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex-section" id="how">
+    <div class="ex-wrap">
+      <h2>Assess, pilot, modernise.</h2>
+      <ol class="ex-steps">
+        <li><h3>Assess</h3><p>Three to four weeks at a fixed price. A traceable specification, a system map, a risk register and a roadmap.</p></li>
+        <li><h3>Pilot</h3><p>One module end to end, with tests that prove the old and the new behave the same.</p></li>
+        <li><h3>Modernise</h3><p>Scale the method module by module, with your team.</p></li>
+      </ol>
+      <p class="ex-measure">{{ backed('team-experience', '26+ years of combined experience') }} in product leadership and enterprise architecture.</p>
+    </div>
+  </section>
+{% endblock %}
