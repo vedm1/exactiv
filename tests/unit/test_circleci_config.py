@@ -120,3 +120,10 @@ def test_site_job_points_lighthouse_at_the_playwright_chromium(cfg: dict[str, An
         < text.index("CHROME_PATH")
         < text.index("check_lighthouse")
     )
+
+
+def test_load_doppler_prints_secret_names_but_never_values() -> None:
+    text = CONFIG.read_text()
+    assert "Doppler returned these secret names" in text
+    assert "keys | join" in text
+    assert 'echo "$secrets"' not in text and "echo $secrets" not in text

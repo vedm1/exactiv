@@ -42,8 +42,12 @@ commands:
             curl -sSfL --tlsv1.2 --proto "=https" --retry 3 -O "https://github.com/DopplerHQ/cli/releases/download/${V}/${F}"
             echo "9c840cdd32cffff06d048329549ba2fa908146b385f21cd1d54bf34a0082d0db  ${F}" | sha256sum -c -
             sudo tar -xzf "$F" -C /usr/local/bin doppler
-            doppler secrets download --no-file --format json \
+            secrets="$(doppler secrets download --no-file --format json)"
+            # Names only, never values: shows which Doppler config this token belongs to.
+            echo "Doppler returned these secret names: $(printf '%s' "$secrets" | jq -r 'keys | join(", ")')"
+            printf '%s' "$secrets" \
               | jq -r 'to_entries[] | select(.key | test("^[A-Za-z_][A-Za-z0-9_]*$")) | "export \(.key)=\(.value | @sh)"' >> "$BASH_ENV"
+            unset secrets
   restore-uv-cache:
     steps:
       - restore_cache:
@@ -203,7 +207,7 @@ jobs:
           name: Skip if the server is not configured yet
           command: |
             if [ -z "${APPS_HOST:-}" ]; then
-              echo "APPS_HOST is not set in Doppler ci. Skipping the deploy."
+              echo "APPS_HOST is missing. DOPPLER_TOKEN in the exaktiv_deploy context must be a service token of the ci config (not prd). Skipping the deploy."
               circleci-agent step halt
             fi
       # circleci-exaktiv, as shown by: ssh-keygen -lf ~/vultr-keys/circleci-exaktiv.pub
