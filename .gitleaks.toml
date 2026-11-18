@@ -2,3 +2,7 @@ title = "exaktiv gitleaks config"
 
 [extend]
 useDefault = true
+
+[allowlist]
+description = "Synthetic test values (G8). Every invented test secret contains the word 'sentinel'. A real key never does."
+stopwords = ["sentinel"]
