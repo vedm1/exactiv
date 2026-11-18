@@ -86,7 +86,10 @@ def test_g9_no_secret_values_in_ci_or_deploy_files() -> None:
     pattern = re.compile(
         r"(dp\.(st|pt|sa)\.[A-Za-z0-9]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})"
     )
-    for path in [CONFIG, *(ROOT / "deploy/server").glob("*"), ROOT / "deploy/known_hosts"]:
+    server_files = [
+        p for p in (ROOT / "deploy/server").iterdir() if p.is_file() and p.suffix != ".pyc"
+    ]
+    for path in [CONFIG, *server_files, ROOT / "deploy/known_hosts"]:
         assert not pattern.search(path.read_text()), path
 
 
@@ -107,3 +110,13 @@ def test_secret_export_filters_key_names() -> None:
 
 def test_context_restriction_is_documented() -> None:
     assert 'pipeline.git.branch == "main"' in CONFIG.read_text()
+
+
+def test_site_job_points_lighthouse_at_the_playwright_chromium(cfg: dict[str, Any]) -> None:
+    steps = cfg["jobs"]["site"]["steps"]
+    text = yaml.safe_dump(steps)
+    assert (
+        text.index("playwright install")
+        < text.index("CHROME_PATH")
+        < text.index("check_lighthouse")
+    )

@@ -131,6 +131,12 @@ jobs:
           command: uv run python scripts/build_site.py
       - run: uv run playwright install --with-deps chromium
       - run:
+          name: Point Lighthouse at the Playwright Chromium (no system Chrome in this image)
+          command: |
+            CHROME_PATH="$(uv run python -c 'from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()')"
+            test -x "$CHROME_PATH"
+            echo "export CHROME_PATH=\"$CHROME_PATH\"" >> "$BASH_ENV"
+      - run:
           name: Browser checks on every page
           command: uv run pytest -m site_browser tests/site
       - run:

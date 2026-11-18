@@ -41,7 +41,12 @@ def run_one(url: str, out: Path) -> dict[str, object]:
         "--output=json", f"--output-path={out}", "--quiet",
         "--chrome-flags=--headless=new --no-sandbox",
     ]  # fmt: skip
-    subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
+    except subprocess.CalledProcessError as exc:
+        # Show why Lighthouse failed (for example "no Chrome found"). The output holds no secrets.
+        print(f"Lighthouse failed on {url}:\n{(exc.stderr or '')[-2000:]}", file=sys.stderr)
+        raise
     data: dict[str, object] = json.loads(out.read_text())
     return data
 
