@@ -171,7 +171,7 @@ p .ex-ref, li .ex-ref { font-size: 0.7em; }
 .ex-code { background: var(--ex-inverse); color: var(--ex-on-inverse-quiet); font: 400 14px / 1.9 var(--ex-font); padding: var(--ex-space-4) 0; overflow-x: auto; margin: 0; }
 .ex-code__file { padding: 0 18px 4px; font-style: italic; color: var(--ex-on-inverse-faint); }
 .ex-code__line { display: block; padding-inline: 18px; white-space: pre; }
-.ex-code__ln { display: inline-block; inline-size: 38px; color: var(--ex-text-disabled); font-variant-numeric: tabular-nums; }
+.ex-code__ln { display: inline-block; inline-size: 38px; color: var(--ex-on-inverse-faint); font-variant-numeric: tabular-nums; }
 .ex-code__line--hit { background: var(--ex-evidence); color: var(--ex-on-evidence); font-weight: 600; }
 .ex-code__line--hit .ex-code__ln { color: inherit; }
 .ex-finding__spec { padding: 22px; display: flex; flex-direction: column; gap: var(--ex-space-4); }

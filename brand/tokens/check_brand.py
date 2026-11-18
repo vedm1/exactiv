@@ -29,7 +29,8 @@ PAIRS = [
     ("text", "ground"), ("text-body", "ground"), ("text-quiet", "ground"), ("text-quiet", "raised"),
     ("text-disabled", "ground"), ("source", "ground"), ("source", "raised"), ("act-text", "ground"),
     ("on-act", "act"), ("on-evidence", "evidence"), ("on-source", "source"),
-    ("on-inverse", "inverse"), ("on-inverse-quiet", "inverse"), ("source-on-inverse", "inverse"),
+    ("on-inverse", "inverse"), ("on-inverse-quiet", "inverse"), ("on-inverse-faint", "inverse"),
+    ("source-on-inverse", "inverse"),
     ("text", "shade"),
 ]
 

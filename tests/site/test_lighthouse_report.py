@@ -1,5 +1,6 @@
 """EXD5: a failed Lighthouse audit names the element, so a CI log is enough to fix it."""
 
+import build_site
 import check_lighthouse
 
 
@@ -28,3 +29,11 @@ def test_failing_nodes_name_selector_snippet_and_reason() -> None:
 def test_failing_nodes_tolerate_an_audit_without_details() -> None:
     assert check_lighthouse.failing_nodes({}) == []
     assert check_lighthouse.failing_nodes({"details": {"type": "table"}}) == []
+
+
+def test_code_line_numbers_use_a_token_that_passes_on_the_ink_panel() -> None:
+    """The panel is Ink in both modes. text-disabled (#6B675C) gave 3.26:1 and failed CI."""
+    css = (build_site.ROOT / "brand/components/exaktiv.css").read_text()
+    rule = next(line for line in css.splitlines() if line.startswith(".ex-code__ln {"))
+    assert "var(--ex-on-inverse-faint)" in rule
+    assert "text-disabled" not in rule

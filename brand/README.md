@@ -24,7 +24,7 @@ and every page reads like a document that a reviewer can check.
 | `tokens/tokens.json` | W3C design tokens format. Generated. |
 | `tokens/tokens.ts` | `ex` (CSS variable references), `light` and `dark` (resolved values for canvas, charts and PDF). Generated. |
 | `tokens/build_tokens.py` | Generates `tokens.json` and `tokens.ts` from `tokens.css`. |
-| `tokens/check_brand.py` | Guard checks for CI: WCAG contrast of 30 text pairs, generated files current, no banned patterns. |
+| `tokens/check_brand.py` | Guard checks for CI: WCAG contrast of 32 text pairs, generated files current, no banned patterns. |
 | `components/exaktiv.css` | Base styles and all components: buttons, links, the Trace, header, footer, cards, pillars, steps, finding card, tables, forms, notices, hero, print. |
 | `icons/arrow-right.svg` | The arrow for buttons and links. The fonts have no "→" glyph, so never type the arrow character. |
 
