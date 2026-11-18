@@ -51,6 +51,19 @@ def run_one(url: str, out: Path) -> dict[str, object]:
     return data
 
 
+def failing_nodes(audit: dict[str, object]) -> list[str]:
+    """Selector, snippet and reason of each node that failed an audit, so a CI log is enough."""
+    details = audit.get("details")
+    items = details.get("items", []) if isinstance(details, dict) else []
+    out: list[str] = []
+    for item in items:
+        node = item.get("node") if isinstance(item, dict) else None
+        if isinstance(node, dict):
+            why = str(node.get("explanation", "")).replace("\n", " ")[:300]
+            out.append(f"{node.get('selector')} | {str(node.get('snippet', ''))[:120]} | {why}")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--site", type=Path, default=build_site.ROOT / "site")
@@ -83,6 +96,7 @@ def main() -> int:
                 a = audits[ref["id"]]  # type: ignore[index]
                 if a["score"] == 0:
                     failures.append(f"{page.slug}: failed accessibility audit {ref['id']}")
+                    failures.extend(f"      {node}" for node in failing_nodes(a))
             print(f"{page.slug:24s} " + "  ".join(line))
     server.shutdown()
     if failures:
