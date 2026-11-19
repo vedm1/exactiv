@@ -10,6 +10,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / ".circleci/config.yml"
 JOBS = ["python", "ui", "site", "secrets", "integration"]
+DEPLOY_JOBS = {"deploy-infra", "build-images", "deploy-app"}  # EXW2 adds the last two
 ALLOWED_REMOTE_SCRIPTS = ("https://astral.sh/uv/0.12.7/",)
 
 
@@ -47,7 +48,7 @@ def test_deploy_infra_needs_every_job_and_runs_only_on_main(cfg: dict[str, Any])
 
 def test_other_jobs_do_not_use_the_deploy_context(cfg: dict[str, Any]) -> None:
     for name, body in workflow_jobs(cfg).items():
-        if name != "deploy-infra":
+        if name not in DEPLOY_JOBS:
             assert "context" not in body, name
 
 

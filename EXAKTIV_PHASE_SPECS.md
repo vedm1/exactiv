@@ -217,7 +217,7 @@ Existing tests stay green. `circleci config validate` runs on the file. `setup.s
 - **Other review fixes**: a deploy of a commit older than the live one is refused; `pull` runs before the switch and the old files are restored on any failure; the secrets go to a temporary file first; `flock -w 600`; `deploy.conf` moved to root-owned `/etc/exaktiv/` and its values are shape-checked (no option injection); the Doppler CLI is pinned (3.75.3) with a checksum; `setup.sh` refuses a key file of more than one line; `docker image prune` removed (it would prune other projects' unused images on the shared host).
 - **Residual risk (user steps)**: the CircleCI context must be restricted to `main` in the CircleCI settings, and `main` must be protected in GitHub. Docker group membership is root-equivalent, so the forced command plus the policy are the whole control.
 - **DATABASE_URL (added 18 Nov 2026)**: `PostgresSettings` accepts `DATABASE_URL` (Neon) and splits it into the `POSTGRES_*` parts; its `sslmode` sets TLS (`require`, `verify-ca`, `verify-full`; `disable`, `allow` and `prefer` mean no TLS). It wins over `POSTGRES_*`; a blank value is ignored. Validation errors hide the input, so the URL never prints. `dsn()` now percent-encodes user and password. **Pooled host only (decision 18 Nov 2026)**: a host with `-pooler.` (or `POSTGRES_POOLED=true`) turns the asyncpg statement cache off (`statement_cache_size=0`), and Alembic gets `prepared_statement_cache_size=0` plus unique prepared-statement names, because PgBouncer in transaction mode keeps no session state. The rate limit uses a transaction-level advisory lock, which works in that mode. Session-level features (`LISTEN`, session locks, `SET`) must not be used. **Probed 18 Nov 2026 against a throwaway PgBouncer 1.26.1 (transaction mode, scram) in front of Postgres 16.4**: `alembic upgrade head`, `downgrade base` and `upgrade head` again all ran; the site form store gave the sixth refusal, exactly 5 accepted out of 20 concurrent calls (the advisory lock holds), insert, pending mail and the two jobs' queries worked. With the statement cache on, 30 rounds also worked on this PgBouncer version, so the cache-off setting is a safe default for older poolers, not a proven need. **Not verified against Neon itself.** Probe containers and network were removed. Tests: `tests/unit/test_db_url.py`.
-- **Not tested here**: a live deploy (needs the GitHub deploy key and the Doppler token on the server), the live Neon connection, the real MinIO start with `user: 65532` on a fresh named volume on the host, and CircleCI itself (the config only passes `circleci config validate`).
+- **Live checks, 19 Nov 2026**: the CircleCI deploy of `7ebe52a` ran; MinIO is healthy on `127.0.0.1:9000` (user 65532 on a fresh named volume works, 1 GiB limit, port closed from outside); other projects unchanged. Neon pooled URL (PostgreSQL 18.7, host in `eu-central-1`): connect with TLS `require`, `alembic upgrade head`, constraint and index checks, the rate limit and an advisory-lock race all passed. `pg_stat_ssl` shows `ssl = false` for the backend because Neon's pooler talks to its compute over its own leg; the client leg used `ssl=require`, which fails if TLS is missing. Tables `alembic_version`, `site_enquiries`, `site_form_hits` now exist on that database (empty).
 
 ## EXK0c — India host
 
@@ -688,11 +688,179 @@ Add settings `rate_limit_max_no_token: int = 2` and a test `test_missing_token_i
 **Prerequisites**: EXW1 ✅, EXD5 ✅, EXK0b ✅; open items "PRD-W D1" and "PRD-W D6".
 **Rough scope**: static files and the form service behind the reverse proxy on the EXK0b server; TLS and HSTS; staging with a password and noindex; DNS; SPF, DKIM and DMARC; server logs with truncated IP addresses kept 14 days; cost record (≤ $10 per month per region).
 
+### EXW2 database migration step (decided 19 Nov 2026)
+
+**Rule**: migrations run on the server, as part of the application deploy. They never run from CircleCI. `DATABASE_URL` (Neon pooled host) stays in Doppler `prd`. CI holds no production database login (the `ci` config and the `exaktiv_deploy` context hold `APPS_HOST` only).
+
+**Design** (the pattern of the unveilio deploy, `bin/deploy` step 4):
+1. The server compose file of the site form has a service `migrate`: same image as the site form, profile `migrate`, `restart: "no"`, command `doppler run --no-fallback -- alembic -c alembic.ini upgrade head`. The image contains `alembic.ini`, `migrations/`, `exaktiv_core` and `exaktiv_site_form`.
+2. The deploy script runs it after `pull` and before anything restarts: `compose --profile migrate run --rm -T --no-deps migrate`. On a failure the script exits 1 and restarts nothing. The old containers keep serving.
+3. `flock` on the project lock already stops two deploys, so two migrations cannot overlap. Alembic itself has no lock.
+4. The migration runs with the pooled Neon settings that EXK0b added (`sqlalchemy_options()`: statement cache off, unique statement names). No session-level features in a revision (`LISTEN`, session advisory locks, `SET`).
+
+**Migration rules** (the old version keeps serving while the migration runs):
+- Expand then contract: a revision must work with the previous application version. Drop or rename a column only in a later release, after no running version uses it.
+- The deploy never runs `downgrade`. Rolling the application back does not roll the database back.
+- One head only. Every revision has a `downgrade()`.
+- Before the first production migration, and before any revision that drops or rewrites data, create a Neon branch as a restore point. Record its name and date in the runbook (`deploy/server/README.md`).
+
+**Which deploy script**: the stateless site form image fits the shared `bin/deploy` (images `ghcr.io/vedm1/exaktiv/...`, no volumes or published ports, network `edge`, Caddy route). It already supports a `migrate` service. This needs a second forced-command key (for example `circleci-exaktiv-app`) and `init-deploy-source`, a change of the shared host that needs the user's yes. The MinIO `deploy-infra` stays separate.
+
+**Tests (TDD)**:
+| Test | Asserts |
+|---|---|
+| `test_server_compose_has_a_migrate_service` | service `migrate`, profile `migrate`, `restart: "no"`, same image as the site form, command ends with `upgrade head` |
+| `test_migrations_have_one_head_and_every_revision_downgrades` | `ScriptDirectory.get_heads()` has length 1; each revision defines `downgrade()` with a body other than `pass` |
+| `test_migrations_run_from_empty_up_down_up` | on a throwaway database: `upgrade head`, `downgrade base`, `upgrade head` |
+| `test_failed_migration_stops_the_deploy_before_up` (script test with a fake `docker`) | `migrate` exits 1: no `up`, the live files stay, exit code 1 |
+| `test_migrate_runs_after_pull_and_before_up` (script test) | the call order is pull, migrate, up |
+| `test_g9_database_url_not_in_ci_config` | `.circleci/config.yml` has no `DATABASE_URL` |
+
+**Done when**: a deploy with a deliberately failing revision left the previous version running. No restore test in EXW2: staging holds test data only (see EXW3). The live Neon check of `alembic upgrade head` was done on 19 Nov 2026.
+
+
+### EXW2 detailed implementation spec (DRAFT, waits for approval, 19 Nov 2026)
+
+**Decisions taken in the session (19 Nov 2026)**: domain `exaktiv.com`. Deploy through the shared `bin/deploy` (the migrate decision above). Own Caddy container in the stack for Basic Auth, headers, log filter and the form route; the shared Caddy only gets one route block. Images built by CircleCI and pushed to `ghcr.io/vedm1/exaktiv/`. Cost: the EU region is already at the 10 dollar limit (Neon); the domain (about 1 dollar per month) is a recorded overrun, and Brevo must stay on the free plan.
+
+**Probed on the server (read-only, 19 Nov 2026)**: one shared Caddy (`caddy:2`, compose `/opt/stack/caddy`, on network `edge` only, 256 MB, config `/opt/stack/caddy/Caddyfile`, no `conf.d`, no `import` of project files). Project blocks are appended by hand after DNS points, then `caddy reload`. The shared snippet `(app)` logs the full client IP as JSON to Alloy, so the Exaktiv block must not import it. Loki keeps logs 336 h (14 days) for all containers (`loki.yml`). `bin/deploy` policy: no volumes, no ports, no `build`, networks exactly external `edge`, images only under `IMAGE_PREFIX`, `REQUIRE_REVISION_LABEL=yes`, `migrate` service run before `up`. Free: about 4.9 GB RAM, 130 GB disk. A pattern exists for a static Caddy site image behind the shared Caddy (`unveilio-landing`, `auto_https off`, `admin off`, tmpfs, read-only). **Consequence for the earlier answer "own network, Caddy joins it"**: `bin/deploy` allows `edge` only, so this spec uses `edge` with unique aliases `exaktiv-web` and `exaktiv-form`.
+
+#### 1. Slices (one phase = one small PR)
+
+- **EXW2-p1 (repository only, no server change)**: Dockerfiles, web Caddyfile, server compose, CI `build-images` and `deploy-app` jobs, site `base_url`, tests.
+- **EXW2-p2 (host, DNS, mail, first deploy)**: shared-host steps (key, `init-deploy-source`, Caddy block, timers), DNS records, Brevo domain, runbook, smoke script, cost record. Independent subagent review of p2 (shared host, key, log filter), because the shared host is root-equivalent and EXK0b's review found 3 critical gaps.
+
+#### 2. Files (repository)
+
+| Path | Content |
+|---|---|
+| `deploy/site/docker-compose.yml` | Project `exaktiv-site` (REPO_PATH `deploy/site`). Services `web`, `form`, `migrate` (profile `migrate`, `restart: "no"`, command `doppler run --no-fallback -- alembic -c alembic.ini upgrade head`), `jobs` (profile `jobs`). Images `ghcr.io/vedm1/exaktiv/web:${IMAGE_TAG:?}` and `.../site-form:${IMAGE_TAG:?}`. All: `read_only`, `tmpfs`, `cap_drop: [ALL]`, `no-new-privileges`, `init`, `mem_limit` (web 128m, form 256m, migrate 256m, jobs 256m), healthcheck, network `edge` external with aliases. No ports, no volumes. `form` environment: `DOPPLER_TOKEN: ${DOPPLER_TOKEN:?}` only. `web` environment: `SITE_MODE` and `STAGING_BASIC_AUTH_HASH` from the server `.env`. |
+| `services/site_form/Dockerfile` | Python 3.12 slim pinned by digest, `uv sync --frozen --package exaktiv-site-form`, contains `alembic.ini`, `migrations/`, `exaktiv_core`, `exaktiv_site_form`; Doppler CLI pinned with checksum (same method as unveilio `web/Dockerfile`); numeric non-root user; labels `org.opencontainers.image.revision` and `source`; command `doppler run --no-fallback -- uvicorn exaktiv_site_form.main:create_default_app --factory --host 0.0.0.0 --port 8000 --no-access-log` (`jobs` overrides the command with `python -m exaktiv_site_form.jobs <name>`). `.dockerignore` excludes `.env*`, `node_modules`, `.git`, tests. |
+| `site/Dockerfile`, `site/Caddyfile`, `site/caddy/mode-staging.caddy`, `site/caddy/mode-live.caddy` | `caddy:2-alpine` pinned by the same digest as unveilio. `dist/` copied to `/srv`. `auto_https off`, `admin off`. Headers rendered from `dist/_headers` (see section 4). `import /etc/caddy/mode-{$SITE_MODE}.caddy`: staging has `basic_auth` and `X-Robots-Tag: noindex, nofollow`; live is empty. `/healthz` answers 200 before auth. `/enquiries` and `/form-token` go to `exaktiv-form:8000`; nothing else does (`/health` of the form is not routed). |
+| `scripts/render_caddyfile.py` | Reads `site/dist/_headers` and writes the header block into the Caddyfile, so the file and the Caddy config cannot drift. |
+| `deploy/site/caddy/exaktiv-site.caddy` | The block the operator appends to the shared Caddyfile (section 5). Not applied by CI. |
+| `deploy/site/systemd/exaktiv-site-{retention,retry-mail,purge-hits}.{service,timer}` | Timers (section 6). Installed by root by hand. |
+| `deploy/site/README.md` | Runbook: one-time host steps, DNS and mail records, deploy, rollback, staging password change, logs, alert, cost record. |
+| `scripts/check_dns.py`, `scripts/smoke_staging.py` | Stdlib checks run by hand (section 7). |
+| `.circleci/config.yml` | New jobs `build-images` and `deploy-app` (section 4). |
+| `site/site.yaml` | `base_url: https://exaktiv.com`. Mail addresses stay `.invalid` until D6 (domain mailbox) is decided; `--launch` keeps failing on them, which is the EXW3 gate. |
+
+#### 3. Secrets and settings (no value in git, G9)
+
+- Doppler project `exaktiv`, **new config `site_prd`** (least privilege: the form never sees the MinIO keys): `DATABASE_URL` (Neon pooled), `BREVO_API_KEY`, `IP_HASH_SECRET`, `FORM_TOKEN_SECRET`, `MAIL_SENDER_EMAIL`, `MAIL_SENDER_NAME`, `TEAM_INBOX_EMAIL`, `SITE_BASE_URL=https://exaktiv.com`, `TRUSTED_PROXY_HOPS=1`. Its service token goes into `/opt/stack/exaktiv-site/.env` as `DOPPLER_TOKEN` (by you, by hand).
+- `/opt/stack/exaktiv-site/.env` (mode 600, by hand) also holds `SITE_MODE=staging` and `STAGING_BASIC_AUTH_HASH` (bcrypt, from `caddy hash-password`). Assumption to probe: a `$` in an env-file value reaches Caddy unchanged. If not, store the hash escaped (`$$`).
+- Doppler `ci` config gets `GHCR_PUSH_TOKEN` (write:packages) and `DEPLOY_APP_SSH_FINGERPRINT`. The `exaktiv_deploy` context stays restricted to `main`.
+- The deploy user's docker config already holds a read-only GHCR pull token (unveilio pattern). Probe in p2 that it can pull `ghcr.io/vedm1/exaktiv/*`; if not, you add one.
+
+#### 4. CI (`.circleci/config.yml`)
+
+- `build-images` (main only; requires `python, ui, site, secrets, integration`): `scripts/build_site.py` (staging build), then `scripts/render_caddyfile.py`, `docker build` of both images with `--build-arg GIT_SHA=$CIRCLE_SHA1`, image tests (`site/test_image.sh` and `services/site_form/test_image.sh`: non-root, labels, healthcheck present, no `.env` in the image, `--no-access-log` in the command), `docker login ghcr.io` with `GHCR_PUSH_TOKEN`, push tag `:$CIRCLE_SHA1`. No `DATABASE_URL` in the config.
+- `deploy-app` (main only; requires `build-images`): `add_ssh_keys` with `DEPLOY_APP_SSH_FINGERPRINT`, then `ssh deploy@$APPS_HOST "$CIRCLE_SHA1"`. The forced command on the host fixes the project to `exaktiv-site`. No-op with a message if `APPS_HOST` is unset.
+- Order on the host: `bin/deploy` pulls, checks the revision label equals the SHA, runs `migrate` (a failure stops before anything restarts), then `up -d --wait`.
+
+#### 5. Shared host changes (EXW2-p2, **each needs your yes**; I give the exact commands, you run them)
+
+1. New key pair `~/vultr-keys/circleci-exaktiv-app`. Line in the `deploy` user's `authorized_keys`: `command="/opt/stack/bin/deploy exaktiv-site",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 ...`.
+2. `install -d -o deploy -g deploy /opt/stack/exaktiv-site`, then `init-deploy-source exaktiv-site git@github.com:vedm1/exactiv.git deploy/site ghcr.io/vedm1/exaktiv/` and `--check`. Add the printed public key as a read-only GitHub deploy key (the repository is the same one; one more read-only key).
+3. `.env` of section 3.
+4. After DNS points at the server and the first deploy is healthy, append to the shared Caddyfile and reload:
+   ```
+   www.exaktiv.com { redir https://exaktiv.com{uri} permanent }
+   exaktiv.com {
+   	reverse_proxy exaktiv-web:80 { lb_try_duration 30s }
+   }
+   ```
+   No `import app`, no `log` directive: the shared tier writes no access log for this site. The security headers and the masked access log come from the `web` container.
+5. Install the six systemd files and `systemctl enable --now` the three timers.
+6. Grafana (shared): one alert rule for the log event `enquiry_mail_failed` of project `exaktiv-site`, to a contact point you choose.
+
+#### 6. Timers and jobs
+
+`ExecStart` (user `deploy`): `/bin/bash -c 'cd /opt/stack/exaktiv-site && IMAGE_TAG=$(cat .current) docker compose --env-file .env --profile jobs run --rm -T --no-deps jobs <name>'`. `retention` daily 03:15 UTC (`Persistent=true`; W-G4), `retry-mail` every minute (`OnUnitActiveSec=1min`), `purge-hits` hourly. `jobs` is not started by `up` (profile). A job failure exits non-zero and shows in `systemctl status`; the log event `enquiry_mail_failed` raises the Grafana alert.
+
+#### 7. Logs, IP truncation, 14 days
+
+- `form`: `--no-access-log`; the EXW1 masking filter stays (G11). The peer of `form` is `web`. `web` sets `servers { trusted_proxies static private_ranges; client_ip_headers X-Forwarded-For }` and sends `header_up X-Forwarded-For {client_ip}`, so the form sees exactly one hop (`TRUSTED_PROXY_HOPS=1`).
+- `web` access log to stdout as JSON with a filter: `request>remote_ip` and `request>client_ip` `ip_mask` 24 (IPv4) and 48 (IPv6); delete `request>headers>X-Forwarded-For`, `X-Real-Ip`, `Authorization`, `Cookie`, `Set-Cookie` and the query string. Alloy ships it to Loki; Loki deletes after 336 h (confirmed 19 Nov 2026). Docker json-file rotation stays as set on the host.
+- **Residual, to accept or fix**: the shared Caddy writes runtime error logs (for example TLS handshake errors) with the full IP, kept 14 days by the same Loki. The privacy notice says "truncated IP addresses". Decide before EXW3: accept and word the notice ("access logs are truncated; error logs may hold the full address for 14 days"), or ask the host owner to filter.
+- **Residual, accepted**: any container on `edge` can reach `exaktiv-form:8000` directly and could set `X-Forwarded-For` to dodge the per-IP limit. Only our own trusted projects share `edge`.
+
+#### 8. DNS and mail (domain `exaktiv.com`; DNS host not stated yet)
+
+| Record | Value | Note |
+|---|---|---|
+| `A exaktiv.com` | `188.245.25.106` | AAAA only if the host has a public IPv6 (probe in p2) |
+| `CNAME www` | `exaktiv.com` | the shared block redirects to the apex |
+| `CAA` | `0 issue "letsencrypt.org"` | optional |
+| `TXT exaktiv.com` (SPF) | one record: `v=spf1 include:spf.brevo.com <mailbox include> ~all` | Brevo value to confirm in the Brevo UI |
+| DKIM | the CNAME or TXT records the Brevo "authenticate domain" page shows | copy from Brevo; not from memory |
+| `TXT _dmarc` | start `v=DMARC1; p=none; adkim=s; aspf=s; rua=mailto:<dmarc mailbox>`; change to `p=quarantine` after two clean weeks and before EXW3 | needs the domain mailbox |
+| MX, `hello@`, `security@`, DMARC mailbox | from the D6 mailbox decision | **open** |
+
+`scripts/check_dns.py` reads the records with `dig` and prints pass or fail for A, SPF (one record, includes Brevo), DKIM, DMARC.
+
+#### 9. Test plan (TDD, failing first)
+
+| Test | Asserts |
+|---|---|
+| `test_site_compose_passes_the_shared_policy` | a Python mirror of the `bin/deploy` rules (documented as a copy, with its source) accepts `deploy/site/docker-compose.yml`: no volumes, ports, build, env_file; network exactly `edge` external; images under `ghcr.io/vedm1/exaktiv/` |
+| `test_site_compose_policy_rejects_*` (parametrised) | the mirror refuses a port, a volume, root user, `privileged`, a foreign image, `network_mode: host` |
+| `test_site_compose_services_are_hardened` | every service: `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `mem_limit`, healthcheck; aliases are `exaktiv-*` and unique |
+| `test_site_compose_has_migrate_and_jobs_profiles` | the migrate tests of the earlier section; `jobs` has profile `jobs` and `restart: "no"` |
+| `test_g9_site_compose_holds_only_the_doppler_token` | `form` environment is `DOPPLER_TOKEN` only; no secret name or value in compose, Dockerfiles, units, README, CI |
+| `test_web_caddyfile_headers_match_headers_file` | every header in `dist/_headers` is in the rendered Caddyfile with the same value |
+| `test_w_g3_web_sets_no_cookie_and_no_third_party` | no `Set-Cookie`; the CSP has no third-party host; no external URL in Caddy files |
+| `test_staging_mode_requires_basic_auth_and_noindex` | `mode-staging.caddy` has `basic_auth` and `X-Robots-Tag`; `mode-live.caddy` has neither; `/healthz` is before auth |
+| `test_g11_web_log_filter_masks_ip_and_drops_credentials` | rendered log block has `ip_mask` for `remote_ip` and `client_ip`, deletes `Authorization`, `Cookie`, `X-Forwarded-For` |
+| `test_web_routes_only_form_paths_to_the_form` | only `/enquiries` and `/form-token` reach `exaktiv-form:8000` |
+| `test_shared_caddy_block_has_no_log_and_no_app_import` | `exaktiv-site.caddy` has no `import app` and no `log` |
+| `test_w_g4_retention_timer_runs_daily` | the timer file has a daily `OnCalendar` and `Persistent=true`; the service runs `jobs retention`; `retry-mail` every minute; `purge-hits` hourly |
+| `test_form_image_command_has_no_access_log` | Dockerfile command has `--no-access-log` and `--factory`; user is numeric non-root; no `.env` copied |
+| `test_circleci_has_build_images_and_deploy_app` | both jobs filter to `main`; `deploy-app` requires `build-images`; `build-images` requires all five CI jobs; no `DATABASE_URL`; no unpinned remote script |
+| `test_site_base_url_is_the_real_domain` | `site.yaml` `base_url` is `https://exaktiv.com`; canonical and sitemap use it |
+| integration (`-m integration`, local Docker) | the built `web` image with a fake form upstream: no password gives 401; password gives 200; `X-Robots-Tag` present; `/enquiries` reaches the upstream with one `X-Forwarded-For` value; the access log line holds the masked address and no `Authorization` |
+
+Existing 47 site tests and the EXW1 tests stay green. Verify: `uv run pytest`, ruff, mypy, `circleci config validate`, `bash -n` and `shellcheck` on scripts, `docker build` of both images.
+
+#### 10. Gating check (EXW2-p2, on the host)
+
+1. `scripts/smoke_staging.py`: no password gives 401; password gives 200 on all 10 pages; `X-Robots-Tag: noindex`; no `Set-Cookie`; all security headers; HTTP redirects to HTTPS; HSTS; TLS 1.2 and later only; `robots.txt` disallows.
+2. A real test enquiry through `POST /enquiries`: the row is stored, the team inbox and the sender get mail within 1 minute, the received headers show SPF, DKIM and DMARC pass. This is the first live Brevo send (not tested before).
+3. Loki shows an access line with a masked address and no credential header.
+4. `systemctl list-timers` lists three timers; `retention` removes a synthetic expired row.
+5. The migration rehearsal with a deliberately failing revision runs on the local rehearsal (a copy of `bin/deploy` with `STACK_ROOT` set to a temp directory and a fake `docker`), **not** by committing a failing revision to `main` (a branch is not allowed, and a bad revision on `main` could break a later deploy). The earlier "done when" line is read this way.
+6. `docker ps` shows the other projects unchanged (same IDs and uptime). `check_dns.py` is green.
+
+#### 11. Cost (limit 10 dollars per month, EU)
+
+Server share zero. Neon 10 dollars (already the whole limit). Domain about 1 dollar per month: a **recorded overrun, accepted by you on 19 Nov 2026**. Brevo free plan (300 mails per day) must be confirmed against the account. GHCR private storage within the free allowance. Extra RAM about 0.6 GB of the 4.9 GB free.
+
+#### 12. Open items this phase touches
+
+Resolved by this spec: the EXW2 deploy settings row (`TRUSTED_PROXY_HOPS`, timers, `--no-access-log`, alert), the migrate step, PRD-W D1 (exaktiv.com, your answer 19 Nov 2026). Still open and **not closed by EXW2**: D6 domain mailbox (MX, `hello@`, `security@`, DMARC mailbox), Brevo DPA and retention, the 6-month deletion of the team mailbox copy, the shared-Caddy error-log IP question, the Neon restore test (EXW3).
+
+#### Implementation notes (EXW2, 19 Nov 2026)
+
+Built as ONE phase (the user's decision), repository side. **Not closed**: the host steps, DNS, mail and first live deploy are in `deploy/site/README.md` and wait for the user.
+
+- **Port**: `web` listens on 8080, not 80 (no capability needed). The shared Caddy block proxies `exaktiv-web:8080`.
+- **Headers**: `scripts/render_caddyfile.py` takes `build_site.HEADERS` (the dict that writes `_headers`), not the generated file. One source, and the unit tests need no built `dist/`.
+- **Found by running the image with `cap_drop: [ALL]`**: the official Caddy binary has a file capability, and the kernel then refuses to start it ("operation not permitted"). `site/Dockerfile` copies the binary (`cp` drops the capability). A unit test and the integration test hold this.
+- **`jobs` uses `entrypoint`, not `command`**: `docker compose run ... jobs <name>` replaces `command`, so the job name would have been lost.
+- **Probed**: `docker compose config` prints a `$` in an env value as `$$`, but the container gets the single `$`. The bcrypt hash in the server `.env` works unchanged (single-quoted).
+- **Probed**: Caddy 2.11.4 accepts the log filters (`ip_mask`, `delete`, `regexp`). The integration test (`tests/integration/test_site_web_image.py`, real image, read-only, all capabilities dropped, fake upstream) proves: 401 without the password, 200 with it, noindex only in staging, every header of `build_site.HEADERS`, `/healthz` open, one `X-Forwarded-For` value reaches the form and no `Authorization`, only two paths reach the form, the log line holds `203.0.113.0` and no query string, credential or full address.
+- **Network**: `edge` (bin/deploy allows nothing else). This replaced the "own network" answer once the migrate decision pointed at `bin/deploy`.
+- **Local builds**: an amd64 Caddy under emulation on Apple silicon crashes. Build native images locally; CI builds amd64 natively.
+- **Deploy key fingerprint** (19 Nov 2026): `deploy-app` uses `SHA256:WfZbao8U9HSoOjcTZcN7d/I0y53qIgb+7dN9Xsqz6Vk` (`circleci-exaktiv-app`). The key must be added to CircleCI before the first push to `main`, or the job fails at `add_ssh_keys`. `build-images` stops without pushing when `GHCR_PUSH_TOKEN` is missing, and `deploy-app` then skips.
+- **Mirror of the host policy**: `tests/unit/test_site_compose.py` copies the jq rules of `bin/deploy` (unveilio repository, read 19 Nov 2026). It must follow that script.
+- **Independent review (19 Nov 2026, subagent, no critical finding)**. Fixed: systemd `TimeoutStartSec=300` and a retention retry (a hung call blocked all later runs); `cpus: 0.5` and `pids_limit: 200` (bcrypt attempts on a shared host); tmpfs owned by uid 10001; `deploy-app` stops when `GHCR_PUSH_TOKEN` is missing and when a newer commit is on `main` (out-of-order pipelines could roll the site back); weak tests replaced (smoke test with no password wall, the vacuous fingerprint assertion, the directive-order assertion) and three integration tests added (empty hash, unknown `SITE_MODE`, a 502 log line). Documented, not fixable here: the shared Caddy error log keeps the full address (PRD-W §8.2 not met for those lines), the `GHCR_PUSH_TOKEN` scope, and the alias gap in the shared `bin/deploy`.
+- **Not tested here**: a live deploy through `bin/deploy`, the shared Caddy block and certificate, the systemd timers (quoting of `$$`), a live Brevo send, DNS, the Grafana alert, the GHCR pull from the host, the migrate service against Neon from inside the image (the image test only proves the imports and the fail-closed start).
+
 ## EXW3 — Launch gate
 
 **Objective**: Prove that the site meets every PRD-W launch rule, then make it public.
 **Prerequisites**: EXW2 ✅, EXW1-ui ✅; open items "claims evidence", "lawyer review" and "employment contract check".
-**Rough scope**: the PRD-W §11 definition of done on staging; every claim in the register "Ready" with its evidence; the lawyer review and the employment check recorded in the build plan; the EXD5 browser and Lighthouse checks green on staging; then remove the staging password.
+**Rough scope**: the PRD-W §11 definition of done on staging; every claim in the register "Ready" with its evidence; the lawyer review and the employment check recorded in the build plan; the EXD5 browser and Lighthouse checks green on staging; one Neon restore test (create a Neon branch from a point in time, read one known row, delete the branch, record the date and the result in `deploy/server/README.md`) before the staging password is removed, because the first real enquiries (personal data that cannot be recreated) arrive after that; then remove the staging password.
 **Gating check**: an independent subagent review of the definition of done (W-G1, W-G2, W-G3).
 
 ## EXW4 — Legal notice and analytics

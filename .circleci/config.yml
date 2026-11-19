@@ -221,6 +221,90 @@ jobs:
             cat deploy/known_hosts >> ~/.ssh/known_hosts
             ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes exaktiv-deploy@"$APPS_HOST" "$CIRCLE_SHA1"
 
+  build-images:
+    # EXW2: build the web image (staging build of the site plus Caddy) and the site form image, test them, push both
+    # as ghcr.io/vedm1/exaktiv/<name>:<commit sha>. The Doppler `ci` config must hold GHCR_PUSH_TOKEN (write:packages).
+    # CI has no production database login. Migrations run on the server (bin/deploy).
+    machine:
+      image: ubuntu-2404:current
+    environment:
+      DOCKER_BUILDKIT: "1"
+    steps:
+      - checkout
+      - install-uv
+      - load-doppler
+      - run:
+          name: Skip if the registry token is not configured yet
+          command: |
+            if [ -z "${GHCR_PUSH_TOKEN:-}" ]; then
+              echo "GHCR_PUSH_TOKEN is missing in the Doppler ci config. Skipping the image build and push."
+              circleci-agent step halt
+            fi
+      - run: uv sync --frozen
+      - run:
+          name: Build the site (staging build) and render the web Caddyfile
+          command: |
+            uv run python scripts/build_site.py
+            uv run python scripts/render_caddyfile.py
+      - run:
+          name: Build both images (the revision label is the commit)
+          command: |
+            docker build --platform linux/amd64 --build-arg GIT_SHA=$CIRCLE_SHA1 \
+              -f site/Dockerfile -t ghcr.io/vedm1/exaktiv/web:$CIRCLE_SHA1 site
+            docker build --platform linux/amd64 --build-arg GIT_SHA=$CIRCLE_SHA1 \
+              -f services/site_form/Dockerfile -t ghcr.io/vedm1/exaktiv/site-form:$CIRCLE_SHA1 .
+      - run:
+          name: Image tests (user, label, healthcheck, no secrets, fails closed)
+          command: |
+            site/test_image.sh ghcr.io/vedm1/exaktiv/web:$CIRCLE_SHA1
+            services/site_form/test_image.sh ghcr.io/vedm1/exaktiv/site-form:$CIRCLE_SHA1
+      - run:
+          name: Push
+          command: |
+            # Login by stdin: the token never appears on a command line. GHCR_USER is the account that owns the packages.
+            printf '%s' "$GHCR_PUSH_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-vedm1}" --password-stdin
+            docker push ghcr.io/vedm1/exaktiv/web:$CIRCLE_SHA1
+            docker push ghcr.io/vedm1/exaktiv/site-form:$CIRCLE_SHA1
+
+  deploy-app:
+    # EXW2: deploy the site stack through the shared bin/deploy. The key is forced to `/opt/stack/bin/deploy exaktiv-site`
+    # on the host (deploy/site/README.md). bin/deploy pulls, checks the image revision label, runs the migrate service,
+    # then starts the containers. Doppler ci holds APPS_HOST.
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - load-doppler
+      - run:
+          name: Skip if the server or the key is not configured yet
+          command: |
+            if [ -z "${APPS_HOST:-}" ]; then
+              echo "APPS_HOST is missing in the Doppler ci config. Skipping the deploy."
+              circleci-agent step halt
+            fi
+            # build-images stops without pushing when GHCR_PUSH_TOKEN is missing; then there is no image to deploy.
+            if [ -z "${GHCR_PUSH_TOKEN:-}" ]; then
+              echo "GHCR_PUSH_TOKEN is missing in the Doppler ci config, so no image was pushed. Skipping the deploy."
+              circleci-agent step halt
+            fi
+            # Two quick pushes can finish out of order, and an older commit is still in the history of main:
+            # deploy only the newest main commit.
+            head="$(git ls-remote origin refs/heads/main | cut -f1)"
+            if [ "$head" != "$CIRCLE_SHA1" ]; then
+              echo "A newer commit ($head) is on main. Skipping the deploy of $CIRCLE_SHA1."
+              circleci-agent step halt
+            fi
+      # circleci-exaktiv-app, as shown by: ssh-keygen -lf ~/vultr-keys/circleci-exaktiv-app.pub
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:WfZbao8U9HSoOjcTZcN7d/I0y53qIgb+7dN9Xsqz6Vk"
+      - run:
+          name: Deploy the site stack
+          command: |
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            cat deploy/known_hosts >> ~/.ssh/known_hosts
+            ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes deploy@"$APPS_HOST" "$CIRCLE_SHA1"
+
 workflows:
   ci:
     jobs:
@@ -232,6 +316,18 @@ workflows:
       - deploy-infra:
           context: exaktiv_deploy
           requires: [python, ui, site, secrets, integration]
+          filters:
+            branches:
+              only: main
+      - build-images:
+          context: exaktiv_deploy
+          requires: [python, ui, site, secrets, integration]
+          filters:
+            branches:
+              only: main
+      - deploy-app:
+          context: exaktiv_deploy
+          requires: [build-images]
           filters:
             branches:
               only: main

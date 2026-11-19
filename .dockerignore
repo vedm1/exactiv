@@ -1,0 +1,13 @@
+*
+# An allowlist (the line above): only what the site form image needs enters the build context. No .env, no tests, no history.
+!pyproject.toml
+!uv.lock
+!alembic.ini
+!migrations
+!libs/core
+!services/*/pyproject.toml
+!model/pyproject.toml
+!services/site_form
+**/__pycache__
+**/*.pyc
+**/.env*

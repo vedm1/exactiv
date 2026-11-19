@@ -1,6 +1,6 @@
 # Site settings (EXD5). Values marked placeholder are open decisions in PRD-W section 11.
 version: 1
-base_url: "https://exaktiv.invalid"          # placeholder: decision D1 (domain). `--launch` fails while it says .invalid
+base_url: "https://exaktiv.com"              # decision D1 (19 Nov 2026)
 legal_name: "Valyrian Tech Pvt Ltd"
 brand: "Exaktiv"
 lang: "en-GB"

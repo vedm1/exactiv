@@ -44,7 +44,7 @@ Automatic on a failed health check. By hand: re-run the deploy job for an older 
 
 ## Neon restore test
 
-Create a Neon branch from a point in time, read one known row, delete the branch. Record the date and the result here.
+**Moved to EXW3, before the site goes public (decision 19 Nov 2026).** Not needed while only test data exists. Then: create a Neon branch from a point in time, read one known row, delete the branch. Record the date and the result here.
 
 | Date | Result |
 |------|--------|
@@ -55,4 +55,4 @@ Create a Neon branch from a point in time, read one known row, delete the branch
 | Item | Monthly cost | Note |
 |------|--------------|------|
 | Hetzner server (shared with other projects) | share not counted | Marginal cost for Exaktiv is zero. |
-| Neon plan | (user states the plan) | Counts against the 10 dollar limit. |
+| Neon plan | 10 dollars per month (stated by the user, 19 Nov 2026; plan name not given) | Counts against the 10 dollar limit. With the server share at zero, Neon alone uses the whole 10 dollars of the EU region. |

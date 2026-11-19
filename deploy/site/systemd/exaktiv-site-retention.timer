@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer for the Exaktiv site form job retention
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 UTC
+Persistent=true
+Unit=exaktiv-site-retention.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer for the Exaktiv site form job purge-hits
+
+[Timer]
+OnCalendar=hourly
+
+Unit=exaktiv-site-purge-hits.service
+
+[Install]
+WantedBy=timers.target

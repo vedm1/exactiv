@@ -1,0 +1,17 @@
+# EXW2: appended to /opt/stack/caddy/Caddyfile by the operator, AFTER the DNS records of exaktiv.com point at this server
+# and after the first deploy of the exaktiv-site project is healthy, then `docker compose exec caddy caddy reload`.
+# Not added earlier: Caddy asks for a certificate for every name it lists, and a name whose DNS does not point here fails
+# and counts against the Let's Encrypt rate limits.
+# Deliberately NOT the shared `(app)` snippet: it logs the full client IP. This block has no log directive, so the shared
+# Caddy writes no access log for this site. The web container logs a truncated address (PRD-W 8.2).
+# The security headers, the staging password and the form routes are set by the web container, not here.
+# The shared Caddy must be on the network edge (it is) and reaches the container by its alias.
+www.exaktiv.com {
+	redir https://exaktiv.com{uri} permanent
+}
+
+exaktiv.com {
+	reverse_proxy exaktiv-web:8080 {
+		lb_try_duration 30s
+	}
+}

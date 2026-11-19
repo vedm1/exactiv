@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer for the Exaktiv site form job retry-mail
+
+[Timer]
+OnUnitActiveSec=1min
+OnBootSec=2min
+Unit=exaktiv-site-retry-mail.service
+
+[Install]
+WantedBy=timers.target

@@ -47,6 +47,12 @@ select = ["E", "F", "I", "B", "UP", "S"]
 "tests/**" = ["S101", "S105", "S106", "S603", "S607"]
 "scripts/**" = ["S603", "S607"]
 "deploy/server/**" = ["E501"]
+# EXW2: long comment and docstring lines in the site deploy scripts and their tests (same rule as deploy/server).
+"scripts/check_dns.py" = ["E501"]
+"scripts/render_caddyfile.py" = ["E501"]
+"scripts/smoke_staging.py" = ["E501"]
+"tests/unit/test_site_*.py" = ["E501"]
+"tests/integration/test_site_web_image.py" = ["E501"]
 # Every value interpolated into Markup in build_site.py is escaped first (html.escape).
 "scripts/build_site.py" = ["S603", "S607", "S704"]
 

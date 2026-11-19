@@ -1,0 +1,96 @@
+# Exaktiv site stack (EXW2): the web tier and the form service. Deployed by the shared /opt/stack/bin/deploy (project
+# exaktiv-site), which writes this file from the commit being deployed and checks it against its policy BEFORE anything is
+# pulled: no volumes, no published ports, no build, only the external network edge, only images under ghcr.io/vedm1/exaktiv/.
+# tests/unit/test_site_compose.py holds a copy of those rules. IMAGE_TAG is the 40-character commit SHA that bin/deploy sets.
+# Only the shared Caddy publishes anything: it proxies exaktiv.com to the alias exaktiv-web (deploy/site/caddy/exaktiv-site.caddy).
+# The MinIO stack is a different project (deploy/server, deploy-infra, project exaktiv). Do not mix them.
+name: exaktiv-site
+
+x-hardened: &hardened
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 30s
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  user: "10001"
+  cpus: 0.5
+  pids_limit: 200
+
+x-form: &form
+  <<: *hardened
+  image: ghcr.io/vedm1/exaktiv/site-form:${IMAGE_TAG:?IMAGE_TAG is the 40-character commit SHA}
+  environment:
+    # The only secret the host hands over. The form secrets (database, mail key, HMAC keys) come from Doppler config
+    # site_prd through `doppler run`. DOPPLER_TOKEN is set by hand in /opt/stack/exaktiv-site/.env.
+    DOPPLER_TOKEN: ${DOPPLER_TOKEN:?set in /opt/stack/exaktiv-site/.env (service token of the Doppler config site_prd)}
+  # doppler writes its config under $HOME; everything else in the image stays read-only.
+  tmpfs:
+    - /home/app:uid=10001,gid=10001,mode=0700
+    - /tmp
+
+services:
+  web:
+    <<: *hardened
+    image: ghcr.io/vedm1/exaktiv/web:${IMAGE_TAG:?IMAGE_TAG is the 40-character commit SHA}
+    environment:
+      # SITE_MODE=staging: password wall and noindex. EXW3 changes it to live. Both values live in /opt/stack/exaktiv-site/.env.
+      SITE_MODE: ${SITE_MODE:?set in /opt/stack/exaktiv-site/.env (staging or live)}
+      STAGING_BASIC_AUTH_HASH: ${STAGING_BASIC_AUTH_HASH:-}
+    tmpfs:
+      - /config:uid=10001,gid=10001
+      - /data:uid=10001,gid=10001
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 128m
+    networks:
+      edge:
+        aliases: [exaktiv-web]
+
+  form:
+    <<: *form
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    mem_limit: 256m
+    networks:
+      edge:
+        aliases: [exaktiv-form]
+
+  # Run by bin/deploy after `pull` and before `up`: `compose --profile migrate run --rm -T --no-deps migrate`.
+  # A failure stops the deploy and the old containers keep serving. Expand-then-contract revisions only (see the spec).
+  migrate:
+    <<: *form
+    profiles: [migrate]
+    restart: "no"
+    command: ["doppler", "run", "--no-fallback", "--", "alembic", "-c", "alembic.ini", "upgrade", "head"]
+    mem_limit: 256m
+    networks:
+      edge: {}
+
+  # Started by the systemd timers (deploy/site/systemd): `--profile jobs run --rm -T --no-deps jobs <retention|retry-mail|purge-hits>`.
+  # `up` never starts it (profile).
+  jobs:
+    <<: *form
+    profiles: [jobs]
+    restart: "no"
+    entrypoint: ["doppler", "run", "--no-fallback", "--", "python", "-m", "exaktiv_site_form.jobs"]
+    mem_limit: 256m
+    networks:
+      edge: {}
+
+networks:
+  edge:
+    external: true

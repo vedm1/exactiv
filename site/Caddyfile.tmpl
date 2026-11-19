@@ -1,0 +1,70 @@
+# EXW2: the web tier of the site image. scripts/render_caddyfile.py fills the security snippet from build_site.HEADERS.
+# TLS ends at the shared Caddy of the host, so no TLS and no admin API here. The port is above 1024: no capability needed.
+{
+	auto_https off
+	admin off
+	servers {
+		# The shared Caddy (a private address on the edge network) tells us the visitor in X-Forwarded-For.
+		trusted_proxies static private_ranges
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+{{SECURITY_HEADERS}}
+
+:8080 {
+	root * /srv
+	encode zstd gzip
+	import security
+
+	# Access log (PRD-W 8.2, G11): the address is cut to /24 (IPv4) or /48 (IPv6), credentials and the query string are
+	# dropped. Alloy ships stdout to Loki, which keeps it 14 days. The shared Caddy writes no access log for this site.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>remote_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+			request>client_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+			request>headers>Authorization delete
+			request>headers>Cookie delete
+			request>headers>X-Forwarded-For delete
+			request>headers>X-Real-Ip delete
+			resp_headers>Set-Cookie delete
+			request>uri regexp \?.* ""
+		}
+	}
+
+	# SITE_MODE=staging puts the password wall and noindex on every page. SITE_MODE=live (EXW3) removes both.
+	import /etc/caddy/mode-{$SITE_MODE}.caddy
+
+	respond /healthz 200
+
+	# Only these two paths reach the form service. The staging password is not passed on.
+	@form path /enquiries /form-token
+	reverse_proxy @form exaktiv-form:8000 {
+		header_up X-Forwarded-For {client_ip}
+		header_up -Authorization
+		lb_try_duration 5s
+	}
+
+	@fonts path /assets/fonts/*
+	header @fonts Cache-Control "public, max-age=31536000, immutable"
+	@revalidate not path /assets/fonts/*
+	header @revalidate Cache-Control "no-cache"
+
+	try_files {path} {path}/index.html
+	file_server
+
+	handle_errors {
+		import security
+		rewrite * /404.html
+		header Cache-Control "no-store"
+		file_server
+	}
+}
