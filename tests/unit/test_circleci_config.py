@@ -116,11 +116,28 @@ def test_context_restriction_is_documented() -> None:
 def test_site_job_points_lighthouse_at_the_playwright_chromium(cfg: dict[str, Any]) -> None:
     steps = cfg["jobs"]["site"]["steps"]
     text = yaml.safe_dump(steps)
-    assert (
-        text.index("playwright install")
-        < text.index("CHROME_PATH")
-        < text.index("check_lighthouse")
+    assert text.index("CHROME_PATH") < text.index("check_lighthouse")
+
+
+def test_site_job_runs_in_the_pinned_playwright_image_and_needs_no_apt(
+    cfg: dict[str, Any],
+) -> None:
+    """EXW3: the apt mirror timed out on 19 Nov 2026. Browsers and libraries come with the image."""
+    image = cfg["jobs"]["site"]["docker"][0]["image"]
+    match = re.fullmatch(
+        r"mcr\.microsoft\.com/playwright/python:v(\d+\.\d+\.\d+)-jammy@sha256:[0-9a-f]{64}", image
     )
+    assert match, f"pin the image by tag and digest: {image}"
+    lock = (ROOT / "uv.lock").read_text()
+    locked = re.search(r'name = "playwright"\nversion = "([^"]+)"', lock)
+    assert locked and locked.group(1) == match.group(1), (
+        "image tag must equal the locked playwright"
+    )
+    steps = yaml.safe_dump(cfg["jobs"]["site"]["steps"])
+    assert (
+        "apt-get" not in steps and "--with-deps" not in steps and "playwright install" not in steps
+    )
+    assert "sha256sum -c" in steps and "node-v" in steps  # Node: pinned tarball with a checksum
 
 
 def test_load_doppler_prints_secret_names_but_never_values() -> None:

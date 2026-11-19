@@ -121,21 +121,32 @@ jobs:
 
   site:
     # EXD5: build gate, browser checks (0 cookies, 0 third-party requests, weight) and Lighthouse.
+    # EXW3: runs in the pinned Playwright image (Chromium and its system libraries are inside). `playwright install --with-deps`
+    # called apt, and the Ubuntu mirror timed out on 19 Nov 2026, which blocked every deploy. The image tag must equal the
+    # playwright version in uv.lock (tests/unit/test_circleci_config.py checks it). The image has no Node, so Node comes from a
+    # pinned, checksummed tarball (no apt).
     docker:
-      - image: cimg/python:3.12-node
+      - image: mcr.microsoft.com/playwright/python:v1.65.2-jammy@sha256:7e9810288d8bc47548fa6f73da3734396788e55caa84c9f6b415b56e06018827
     steps:
       - checkout
+      - run:
+          name: Install Node (pinned, checksum checked) and pnpm
+          command: |
+            set -euo pipefail
+            curl -fsSL -o /tmp/node.tar.gz https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.gz
+            echo "b8492284c76a54baf58d61668dd0e41ee0fc98adabf9503d30f05d08f55b4406  /tmp/node.tar.gz" | sha256sum -c -
+            tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1
+            rm /tmp/node.tar.gz
+            npm install -g pnpm@11.8.0
       - install-uv
-      - install-pnpm
       - restore-uv-cache
       - run: uv sync --frozen
       - save-uv-cache
       - run:
           name: Build the site (claims, banned claims, URL, page and brand gates)
           command: uv run python scripts/build_site.py
-      - run: uv run playwright install --with-deps chromium
       - run:
-          name: Point Lighthouse at the Playwright Chromium (no system Chrome in this image)
+          name: Point Lighthouse at the Playwright Chromium
           command: |
             CHROME_PATH="$(uv run python -c 'from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()')"
             test -x "$CHROME_PATH"
