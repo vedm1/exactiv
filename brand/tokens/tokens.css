@@ -70,6 +70,9 @@
   /* evidence band: top and bottom of the highlighter stroke, in em */
   --ex-band-top: 0.3em;
   --ex-band-bottom: 1.02em;
+  /* the same band on running text (Instrument Sans): the line box is 1.18em, so the band covers cap height to descender */
+  --ex-band-body-top: 0.1em;
+  --ex-band-body-bottom: 1.12em;
 
   /* space (4 px base) */
   --ex-space-1: 4px;  --ex-space-2: 8px;  --ex-space-3: 12px; --ex-space-4: 16px;

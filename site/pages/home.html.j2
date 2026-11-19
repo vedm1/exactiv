@@ -15,14 +15,13 @@
 
   <section class="ex-section" id="pillars">
     <div class="ex-wrap">
-{% if ready('findings-sourced') or ready('in-region') or ready('no-training') or ready('human-approval') %}      <h2>The rules that hold every engagement.</h2>
+      <h2>What you can expect.</h2>
       <div class="ex-pillars">
-{% if ready('findings-sourced') %}        <div class="ex-pillar"><h3>Traceable</h3><p>{{ backed('findings-sourced', 'Every finding links to its source.') }} A file and a line in code, or a page and an area in a document.</p></div>
-{% endif %}{% if ready('in-region') %}        <div class="ex-pillar"><h3>In-region</h3><p>{{ backed('in-region', 'AI processing stays in the client’s region.') }} EU data stays in the EU. India data stays in India. There is no fallback to another region.</p></div>
-{% endif %}{% if ready('no-training') %}        <div class="ex-pillar"><h3>Private</h3><p>{{ backed('no-training', 'We never train models on a client’s code or data.') }} One client’s data never helps another client.</p></div>
-{% endif %}{% if ready('human-approval') %}        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change, release or decision happens without a human approval.') }}</p></div>
+        <div class="ex-pillar"><h3>Written down</h3><p>The stages, the deliverables and the data region are set in a written scope before work starts.</p></div>
+        <div class="ex-pillar"><h3>Short stages</h3><p>You review the result of each stage before the next one begins.</p></div>
+        <div class="ex-pillar"><h3>A clean handover</h3><p>You receive the artefacts, the tests and the notes your team needs to continue.</p></div>
+{% if ready('human-approval') %}        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change, release or decision happens without a human approval.') }}</p></div>
 {% endif %}      </div>
-{% endif %}
     </div>
   </section>
 

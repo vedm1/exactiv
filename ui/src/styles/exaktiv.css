@@ -107,6 +107,10 @@ a:hover { color: var(--ex-text); }
   color: var(--ex-source);
   text-decoration: none;
 }
+p .ex-mark, li .ex-mark {
+  background: linear-gradient(transparent var(--ex-band-body-top), var(--ex-evidence) var(--ex-band-body-top),
+              var(--ex-evidence) var(--ex-band-body-bottom), transparent var(--ex-band-body-bottom));
+}
 p .ex-ref, li .ex-ref { font-size: 0.7em; }
 .ex-cites {
   list-style: none;

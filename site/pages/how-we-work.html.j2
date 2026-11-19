@@ -2,18 +2,17 @@
 {% block h1 %}<h1>How an engagement runs, stage by stage.</h1>{% endblock %}
 {% block lead %}We promise only what we can show you evidence for.{% endblock %}
 {% block content %}
-{% if ready('findings-sourced') or ready('in-region') or ready('no-training') or ready('human-approval') %}  <section class="ex-section">
+  <section class="ex-section">
     <div class="ex-wrap">
       <h2>What every engagement includes.</h2>
       <div class="ex-pillars">
-{% if ready('findings-sourced') %}        <div class="ex-pillar"><h3>Traceable</h3><p>{{ backed('findings-sourced', 'Every finding links to its source.') }} In code, that is a file and a line. In a document, it is a page and an area.</p></div>
-{% endif %}{% if ready('in-region') %}        <div class="ex-pillar"><h3>In-region</h3><p>{{ backed('in-region', 'AI processing stays in your region.') }} If a region is not available, the task stops and goes to a person.</p></div>
-{% endif %}{% if ready('no-training') %}        <div class="ex-pillar"><h3>Private</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} Your data never helps another client.</p></div>
-{% endif %}{% if ready('human-approval') %}        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change without human approval.') }} A person on your side approves each stage before the next one starts.</p></div>
+        <div class="ex-pillar"><h3>A written scope</h3><p>We set the stages, the deliverables and the data region in writing before work starts.</p></div>
+        <div class="ex-pillar"><h3>Short stages</h3><p>You see the result of each stage and give feedback before the next one begins.</p></div>
+        <div class="ex-pillar"><h3>One decision maker</h3><p>One person on your side decides. We write each decision down.</p></div>
+{% if ready('human-approval') %}        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change without human approval.') }} A person on your side approves each stage before the next one starts.</p></div>
 {% endif %}      </div>
     </div>
   </section>
-{% endif %}
 
   <section class="ex-section">
     <div class="ex-wrap">
