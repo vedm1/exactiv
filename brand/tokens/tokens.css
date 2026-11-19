@@ -55,9 +55,9 @@
   --ex-size-display: clamp(3.25rem, 7vw, 6rem);
   --ex-size-h1: clamp(2.5rem, 4.5vw, 4rem);
   --ex-size-h2: clamp(1.875rem, 2.8vw, 2.5rem);
-  --ex-size-h3: 1.625rem;
-  --ex-size-lead: 1.25rem;
-  --ex-size-body: 1.0625rem;
+  --ex-size-h3: clamp(1.375rem, 1.2rem + 0.6vw, 1.625rem);     /* 22 to 26 */
+  --ex-size-lead: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);  /* 18 to 20 */
+  --ex-size-body: clamp(1rem, 0.97rem + 0.12vw, 1.0625rem);  /* 16 to 17 */
   --ex-size-cite: 1rem;
   --ex-size-small: 0.9375rem;
   --ex-lh-display: 0.98;   /* never tighter: the highlight band needs it */
@@ -85,9 +85,26 @@
   --ex-control-h: 52px;
   --ex-input-h: 48px;
 
+  /* breakpoints: mobile first. CSS cannot read a variable inside @media, so media queries
+     write these values as numbers; check_brand.py fails on any other width.
+     min-width uses the value, max-width uses the value minus 1 px. */
+  --ex-bp-sm: 480px;   /* large phone: footer links and tables relax */
+  --ex-bp-md: 768px;   /* tablet: 8-column grid */
+  --ex-bp-lg: 960px;   /* small laptop: cards go side by side, 12-column grid */
+  --ex-bp-xl: 1181px;  /* full navigation; below it, the Menu button */
+
+  /* responsive layout: fluid between 320 px and 1440 px, no jumps */
+  --ex-gutter: clamp(16px, 3.2vw, 24px);                         /* page side padding */
+  --ex-section-y: clamp(var(--ex-space-12), 8vw, var(--ex-space-20));   /* 48 to 80 */
+  --ex-hero-top: clamp(var(--ex-space-12), 9vw, var(--ex-space-24));    /* 48 to 96 */
+  --ex-hero-bottom: clamp(var(--ex-space-12), 8vw, var(--ex-space-20)); /* 48 to 80 */
+  --ex-card-pad: clamp(22px, 4vw, 30px);
+  --ex-header-h: clamp(64px, 12vw, 72px);
+  --ex-target-min: 44px;   /* smallest tap target on touch screens (WCAG 2.5.5) */
+  --ex-cols: 4;            /* layout grid columns: 4 / 8 at md / 12 at lg */
+
   /* layout and motion */
   --ex-max: 1280px;
-  --ex-gutter: 24px;
   --ex-measure: 68ch;
   --ex-ease: cubic-bezier(0.2, 0, 0, 1);
   --ex-dur: 120ms;
@@ -131,6 +148,9 @@
   --ex-act-text: var(--ex-raw-vermilion-light);
   --ex-inverse: var(--ex-raw-night-raised);
 }
+
+@media (min-width: 768px) { :root { --ex-cols: 8; } }  /* --ex-bp-md */
+@media (min-width: 960px) { :root { --ex-cols: 12; } } /* --ex-bp-lg */
 
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }

@@ -38,7 +38,7 @@
   <div class="ex-header__in">
     <a class="ex-header__logo" href="#top" aria-label="Exaktiv brand guidelines, top"><img src="../logo/svg/exaktiv-lockup.svg" alt="Exaktiv" width="140" height="30"></a>
     <nav class="ex-nav" aria-label="Guide sections">
-      <a href="#logo">Logo</a><a href="#colour">Colour</a><a href="#type">Type</a><a href="#trace">The Trace</a><a href="#components">Components</a><a href="#tokens">Tokens</a>
+      <a href="#logo">Logo</a><a href="#colour">Colour</a><a href="#type">Type</a><a href="#trace">The Trace</a><a href="#components">Components</a><a href="#tokens">Tokens</a><a href="#responsive">Responsive</a>
     </nav>
     <a class="ex-btn ex-btn--primary ex-btn--go ex-header__cta" href="#files">Get the files</a>
   </div>
@@ -239,6 +239,40 @@
         </table>
       </div>
       <p class="ex-measure">Space runs on a 4 px base (4 to 96). Rules are 1.5 px, accent edges 6 px, focus rings 3 px with a 3 px gap. Radius is 0. No shadows, no blur, no gradients except the evidence band. Maximum width 1280 px, gutter 24 px, 68 characters per body line, transitions 120 ms.</p>
+    </div>
+  </section>
+
+  <section class="ex-section" id="responsive">
+    <div class="ex-wrap">
+      <h2>Mobile first. Fluid between four breakpoints.</h2>
+      <p class="ex-measure">Spacing and text sizes grow smoothly from 320 px to 1440 px wide with <code>clamp()</code>, so nothing jumps. Layout changes only at the four breakpoints. CSS cannot read a variable inside <code>@media</code>, so a media query writes the breakpoint as a number; <code>check_brand.py</code> fails on any width that is not a breakpoint token.</p>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Breakpoint</th><th>Width</th><th>What changes</th></tr></thead>
+          <tbody>
+            <tr><td>Base (phone)</td><td class="ex-tnum">0 to 479</td><td style="font-weight:400">One column. Menu button. 4-column grid. Gutter 16 px.</td></tr>
+            <tr><td>--ex-bp-sm</td><td class="ex-tnum">480</td><td style="font-weight:400">Footer links sit on one line. Tables get their full padding.</td></tr>
+            <tr><td>--ex-bp-md</td><td class="ex-tnum">768</td><td style="font-weight:400">8-column grid. Pillars, steps and form fields sit three across.</td></tr>
+            <tr><td>--ex-bp-lg</td><td class="ex-tnum">960</td><td style="font-weight:400">Capability cards sit side by side. 12-column grid.</td></tr>
+            <tr><td>--ex-bp-xl</td><td class="ex-tnum">1181</td><td style="font-weight:400">Full navigation in the header. Below it, the Menu button.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ex-table-box">
+        <table class="ex-table">
+          <thead><tr><th>Layout token</th><th>At 320 px</th><th>At 1440 px</th></tr></thead>
+          <tbody>
+            <tr><td>--ex-gutter</td><td class="ex-tnum">16</td><td class="ex-tnum">24</td></tr>
+            <tr><td>--ex-section-y</td><td class="ex-tnum">48</td><td class="ex-tnum">80</td></tr>
+            <tr><td>--ex-hero-top / --ex-hero-bottom</td><td class="ex-tnum">48 / 48</td><td class="ex-tnum">96 / 80</td></tr>
+            <tr><td>--ex-card-pad</td><td class="ex-tnum">22</td><td class="ex-tnum">30</td></tr>
+            <tr><td>--ex-header-h</td><td class="ex-tnum">64</td><td class="ex-tnum">72</td></tr>
+            <tr><td>--ex-size-body / lead / h3</td><td class="ex-tnum">16 / 18 / 22</td><td class="ex-tnum">17 / 20 / 26</td></tr>
+            <tr><td>--ex-target-min</td><td class="ex-tnum">44</td><td class="ex-tnum">44</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ex-measure">The <code>.ex-grid</code> layout grid has <code>--ex-cols</code> columns (4, 8, 12). A child sets <code>--span</code>; on a smaller grid it never spans more columns than exist.</p>
     </div>
   </section>
 

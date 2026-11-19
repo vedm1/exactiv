@@ -20,7 +20,8 @@ def decls(block: str) -> dict[str, str]:
 
 LIGHT, DARK = decls(light_block), decls(dark_block)
 SHAPE = {"rule-w", "accent-w", "radius", "focus-w", "focus-offset", "control-h", "input-h"}
-LAYOUT = {"max", "gutter", "measure", "ease", "dur"}
+LAYOUT = {"max", "gutter", "measure", "ease", "dur", "section-y", "hero-top", "hero-bottom", "card-pad", "header-h", "target-min", "cols"}
+RESPONSIVE = {int(w): decls(b) for w, b in re.findall(r"@media \(min-width: (\d+)px\) \{\s*:root \{(.*?)\}\s*\}", css, re.S)}
 
 
 def ref(value: str) -> str:
@@ -53,7 +54,7 @@ def resolve(value: str) -> str:
 
 out: dict = {
     "$description": "Exaktiv design tokens v1.0. Generated from tokens.css. Components read role tokens only.",
-    "raw": {}, "role": {}, "type": {}, "space": {}, "shape": {}, "layout": {}, "theme": {"dark": {}},
+    "raw": {}, "role": {}, "type": {}, "space": {}, "shape": {}, "breakpoint": {}, "layout": {}, "responsive": {}, "theme": {"dark": {}},
 }
 for key, value in LIGHT.items():
     name = key[5:]
@@ -64,6 +65,8 @@ for key, value in LIGHT.items():
         out["raw"][name[4:]] = entry
     elif name.startswith(("font", "size", "lh", "track", "band")):
         out["type"][name] = entry
+    elif name.startswith("bp-"):
+        out["breakpoint"][name[3:]] = entry
     elif name.startswith("space"):
         out["space"][name[6:]] = entry
     elif name in SHAPE:
@@ -74,6 +77,8 @@ for key, value in LIGHT.items():
         out["role"][name] = entry
 for key, value in DARK.items():
     out["theme"]["dark"][key[5:]] = {"$value": ref(value), "$type": "color"}
+for width, table in sorted(RESPONSIVE.items()):
+    out["responsive"][f"min-width {width}px"] = {k[5:]: {"$value": v} for k, v in table.items()}
 (HERE / "tokens.json").write_text(json.dumps(out, indent=2) + "\n")
 
 
@@ -100,6 +105,13 @@ lines = [
     "  ...light,",
     *[f"  {camel(k[5:])}: {json.dumps(v)}," for k, v in dark_resolved.items()],
     "} as const;",
+    "",
+    "/** Breakpoints in px (mobile first). `up('lg')` gives a media query for useMediaQuery or matchMedia. */",
+    "export const breakpoints = {",
+    *[f"  {k[8:]}: {int(LIGHT[k][:-2])}," for k in LIGHT if k.startswith("--ex-bp-")],
+    "} as const;",
+    "export const up = (bp: keyof typeof breakpoints) => `(min-width: ${breakpoints[bp]}px)`;",
+    "export const down = (bp: keyof typeof breakpoints) => `(max-width: ${breakpoints[bp] - 1}px)`;",
     "",
     "export type ExToken = keyof typeof ex;",
     "",

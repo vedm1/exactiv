@@ -75,6 +75,9 @@ BANNED = [
     (re.compile(r"box-shadow\s*:[^;]*\b\d+px\s+\d+px\s+[1-9]"), "blurred shadow"),
     (re.compile(r"var\(--ex-raw-"), "raw token in a component"),
 ]
+BPS = {int(v[:-2]) for k, v in LIGHT.items() if k.startswith("--ex-bp-")}
+ALLOWED_WIDTHS = {("min", w) for w in BPS} | {("max", w - 1) for w in BPS}
+MEDIA = re.compile(r"\((min|max)-width:\s*(\d+)px\)")
 targets = [Path(a) for a in sys.argv[1:]] or [HERE.parent / "components", ROOT / "ui" / "src"]
 for target in targets:
     if not target.exists():
@@ -87,6 +90,9 @@ for target in targets:
         text = re.sub(r"/\*.*?\*/|<!--.*?-->", lambda m: "\n" * m.group().count("\n"), f.read_text(errors="ignore"), flags=re.S)
         for n, line in enumerate(text.splitlines(), 1):
             code = re.sub(r"(?<!:)//.*$", "", line)
+            for kind_, width in MEDIA.findall(code):
+                if (kind_, int(width)) not in ALLOWED_WIDTHS:
+                    failures.append(f"{f.relative_to(ROOT) if f.is_relative_to(ROOT) else f}:{n}: media width {kind_}-width {width}px is not a breakpoint token (--ex-bp-*)")
             for rx, why in BANNED:
                 if rx.search(code):
                     failures.append(f"{f.relative_to(ROOT) if f.is_relative_to(ROOT) else f}:{n}: {why}")

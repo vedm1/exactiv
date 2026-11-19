@@ -227,3 +227,26 @@ def test_without_javascript_the_nav_stays_visible_on_a_phone(
     page.goto(base + "/", wait_until="networkidle")
     assert page.locator(".ex-nav").is_visible() and not page.locator("#menu-toggle").is_visible()
     context.close()
+
+
+def test_touch_targets_on_a_phone_are_at_least_the_brand_minimum(
+    served: tuple[str, list[str]], browser: Browser
+) -> None:
+    """Brand rule 13: every control is at least --ex-target-min (44 px) tall."""
+    base, paths = served
+    context = browser.new_context(viewport={"width": 390, "height": 800})
+    page = context.new_page()
+    for path in paths:
+        page.goto(base + path, wait_until="networkidle")
+        if page.locator("#menu-toggle").is_visible():
+            page.locator("#menu-toggle").click()
+        small = page.evaluate(
+            """() => [...document.querySelectorAll(
+                'button, input:not([type=hidden]):not(.ex-honeypot), select, textarea, '
+                + '.ex-btn, .ex-nav a')]
+              .filter(e => e.getBoundingClientRect().height > 0
+                           && e.getBoundingClientRect().height < 43.5)
+              .map(e => e.tagName + '.' + e.className)"""
+        )
+        assert not small, f"{path}: controls under 44 px tall {small}"
+    context.close()

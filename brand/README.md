@@ -42,7 +42,9 @@ and every page reads like a document that a reviewer can check.
 9. **One vermilion button per screen.** Text on vermilion is always Ink, never Paper.
 10. **The Trace gate.** A claim gets a footnote number only when its status in the PRD-W claims register is "Ready".
 11. **Logo follows the theme.** On a dark ground, use the `-reversed` file. In plain HTML with a theme button (the website), use two `<img>` elements with `.ex-logo--light` and `.ex-logo--dark`; the CSS shows one by the system setting or by `data-theme`. Without a button, `<picture>` with a `(prefers-color-scheme: dark)` source works too; in React, switch the file on the `data-theme` value.
-12. **No names.** No person, employer or client names in any asset, file name or metadata (PRD-W constraint 1 to 3).
+12. **Mobile first, fluid between breakpoints.** Use the layout tokens (`--ex-gutter`, `--ex-section-y`, `--ex-hero-top`, `--ex-hero-bottom`, `--ex-card-pad`, `--ex-header-h`) for spacing that changes with the screen. Write a media query only at a breakpoint token, as a number: `min-width` = the token, `max-width` = the token minus 1 px. `check_brand.py` fails on any other width.
+13. **Touch targets.** Every control is at least `--ex-target-min` (44 px) tall. Primary buttons are `--ex-control-h` (52 px).
+14. **No names.** No person, employer or client names in any asset, file name or metadata (PRD-W constraint 1 to 3).
 
 ## How to load it
 
@@ -63,6 +65,27 @@ Phase EXD2 does this and adds the checks (see `PHASES.md`).
 
 Content-Security-Policy: the button arrow is an inline SVG data URI in `exaktiv.css`.
 Use `img-src 'self' data:`. Everything else is `'self'` (PRD-W §8.2).
+
+## Responsive tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--ex-bp-sm` | 480px | Large phone. Below it: footer links stack, table cells get less padding. |
+| `--ex-bp-md` | 768px | Tablet. Layout grid goes from 4 to 8 columns. |
+| `--ex-bp-lg` | 960px | Small laptop. Capability cards go side by side. Layout grid has 12 columns. |
+| `--ex-bp-xl` | 1181px | Full navigation. Below it, the Menu button opens the navigation (when `theme.js` runs). |
+| `--ex-gutter` | 16 to 24 px | Page side padding. |
+| `--ex-section-y` | 48 to 80 px | Space above and below a section. |
+| `--ex-hero-top`, `--ex-hero-bottom` | 48 to 96 px, 48 to 80 px | Hero padding. |
+| `--ex-card-pad` | 22 to 30 px | Card padding. |
+| `--ex-header-h` | 64 to 72 px | Header and Menu button height. |
+| `--ex-target-min` | 44px | Smallest tap target. |
+| `--ex-cols` | 4 / 8 / 12 | Columns of the `.ex-grid` layout grid. A child spans `--span` columns. |
+| `--ex-size-h3`, `--ex-size-lead`, `--ex-size-body` | 22 to 26, 18 to 20, 16 to 17 px | Fluid text sizes, as display, h1 and h2 already are. |
+
+Fluid values use `clamp()` between 320 px and 1440 px wide, so nothing jumps between breakpoints.
+In TypeScript, `tokens.ts` exports `breakpoints`, `up("lg")` and `down("xl")` for `matchMedia`.
+The site tests (`tests/site/test_browser.py`) check every page at 320, 390, 768, 1024, 1180, 1181 and 1440 px.
 
 ## The Trace, in markup
 
