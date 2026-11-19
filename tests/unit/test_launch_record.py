@@ -64,10 +64,9 @@ def test_unknown_item_fails(tmp_path: Path) -> None:
     assert rec.problems(write(tmp_path, [*full(), item("surprise")]))
 
 
-def test_real_record_lists_every_required_item_and_is_not_complete_yet() -> None:
-    found = rec.problems(ROOT / "docs" / "launch" / "EXW3-record.yaml")
-    assert not any("missing" in p or "unknown" in p for p in found)
-    assert any("go-live-approval" in p for p in found)  # not done until the owner says yes
+def test_real_record_is_complete_after_the_go_live_approval() -> None:
+    """19 Nov 2026: the owner approved the launch. A later edit that reopens an item fails here."""
+    assert rec.problems(ROOT / "docs" / "launch" / "EXW3-record.yaml") == []
 
 
 def test_w_g1_real_record_names_no_person_or_company() -> None:

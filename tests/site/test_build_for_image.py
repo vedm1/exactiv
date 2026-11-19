@@ -4,6 +4,7 @@ import base64
 from pathlib import Path
 
 import build_site
+import check_launch_record
 import pytest
 import yaml
 from build_site_for_image import LaunchError, build_for_image
@@ -97,5 +98,7 @@ def test_w_g1_a_name_from_the_list_fails_the_launch_build(mini: Path, tmp_path: 
         build_for_image(mini, BRAND, tmp_path / "d", names_env(), record(tmp_path, complete=True))
 
 
-def test_real_repository_has_no_launch_flag_yet() -> None:
-    assert not (ROOT / "site" / "launch.flag").exists()  # the go-live commit adds it
+def test_real_repository_has_the_launch_flag_and_a_complete_record() -> None:
+    """The go-live commit (19 Nov 2026) added the flag. Delete it to return to staging."""
+    assert (ROOT / "site" / "launch.flag").is_file()
+    assert check_launch_record.problems(check_launch_record.DEFAULT) == []

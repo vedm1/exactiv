@@ -82,7 +82,10 @@ items:
     note: "Launch claims: team-experience, reply-time, human-approval and the four why-now claims. Four claims stay off the site (no evidence), and access-logged and retention stay off until their real steps are written."
   - id: retention-alert
     what: "The scheduler container runs on the host, the old systemd timers are off, and the Grafana alert on a missing `job_done retention` line exists."
-    status: pending
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Scheduler container runs on the host (job_done for retry-mail, purge-hits and retention seen in its log). Old systemd timers disabled and removed. Two Grafana rules created. Freshness rule tested: it fired with the scheduler stopped."
   - id: independent-review
     what: "Independent subagent review of W-G1, W-G2 and W-G3 on the launch build, findings fixed."
     status: done
@@ -91,4 +94,7 @@ items:
     note: "W-G1, W-G3 and W-G5: no finding. W-G2 and the gate: fixed (launch marker, implied claims, empty section, name minimum). Left to the owner: home tagline, Team lines, Brevo tracking basis, Art. 49 basis, address, brand PNG metadata."
   - id: go-live-approval
     what: "Owner says yes to SITE_MODE=live on the host."
-    status: pending
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Owner approved the public launch in chat on 19 Nov 2026 (stage 1: launch build behind the staging password). SITE_MODE=live on the host is a separate owner action after the launch build is checked."
