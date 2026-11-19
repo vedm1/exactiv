@@ -1,0 +1,94 @@
+# EXW3 launch record (PRD-W section 11). The public launch needs every item `done` or `accepted`.
+# scripts/check_launch_record.py reads this file. `by` is a role, never a person (W-G1).
+version: 1
+items:
+  - id: privacy-review
+    what: "Review of the privacy notice text (PRD-W 8.3), including the wording on the host error log, the email open count and the team mailbox."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Reviewed by a data protection lawyer (owner confirmation, 19 Nov 2026). Two sentences were added later (browser headers in the access log, 1 hour IP hash for spam limits) and one more (monthly Brevo deletion request): the owner has them re-checked."
+  - id: employment-check
+    what: "Employment contract check before the public launch."
+    status: accepted
+    date: 2026-11-19
+    by: owner
+    note: "Owner accepts the risk. The site names no person, and names the company on one privacy-notice line only."
+  - id: brevo-dpa
+    what: "Brevo data processing agreement signed."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Signed, as stated by the owner."
+  - id: brevo-retention
+    what: "How long Brevo keeps the content of the mail it sends, and the privacy notice says so."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Brevo deletes mail content only on request. The privacy notice and deploy/site/README.md state a monthly deletion request for mail older than 6 months. No mail is that old yet (first real mail: Nov 2026), so there is nothing to send. The first request is due in May 2027."
+  - id: dpa-hosting
+    what: "Data processing agreement with the hosting provider (Hetzner) covers this site."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Confirmed by the owner, 19 Nov 2026."
+  - id: dpa-database
+    what: "Data processing agreement with the database provider (Neon, Frankfurt)."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Signed 19 Nov 2026 (build plan open item, closed)."
+  - id: dpa-mailbox
+    what: "Google Workspace data processing amendment accepted, data region Europe."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Confirmed by the owner, 19 Nov 2026."
+  - id: mailbox-retention-rule
+    what: "A 6-month deletion rule for enquiry mails in the team mailbox. See deploy/site/README.md."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Vault retention rule created by the owner, 19 Nov 2026 (subject New website enquiry, 180 days)."
+  - id: dmarc-quarantine
+    what: "DMARC policy changed from p=none to p=quarantine. `check_dns.py --launch` passes."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Record live: v=DMARC1; p=quarantine; adkim=s; aspf=s. check_dns.py --launch passes (A, www, SPF, DKIM, DMARC). Owner: confirm the test mails from hello@ and the form reply reach the inbox."
+  - id: neon-restore-test
+    what: "Neon restore test: branch from a point in time, read one known row, delete the branch. See deploy/server/README.md."
+    status: accepted
+    date: 2026-11-19
+    by: owner
+    note: "Owner accepts the risk and skips the restore test (19 Nov 2026). Neon point-in-time restore has never been tried. Revisit after launch, or when the data matters more."
+  - id: name-list-run
+    what: "Local run of `build_site.py --launch --names FILE` with the real name list, and the list is in Doppler config ci as SITE_NAMES_B64."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Launch build passed locally with the real list (7 entries, kept outside the repository). The list is in Doppler config ci as SITE_NAMES_B64 and decodes to 7 lines."
+  - id: team-page-review
+    what: "Owner confirms that no description on the Team page can identify a client."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Owner finalised the reviewer findings (home tagline, Team lines, email tracking, Art. 49 basis, address, brand image metadata) on 19 Nov 2026. The site stays as it is."
+  - id: claims-approved
+    what: "Owner approves the claims at launch (docs/evidence/README.md) and flips each approved claim to ready."
+    status: done
+    date: 2026-11-19
+    by: owner
+    note: "Launch claims: team-experience, reply-time, human-approval and the four why-now claims. Four claims stay off the site (no evidence), and access-logged and retention stay off until their real steps are written."
+  - id: retention-alert
+    what: "The scheduler container runs on the host, the old systemd timers are off, and the Grafana alert on a missing `job_done retention` line exists."
+    status: pending
+  - id: independent-review
+    what: "Independent subagent review of W-G1, W-G2 and W-G3 on the launch build, findings fixed."
+    status: done
+    date: 2026-11-19
+    by: independent-reviewer
+    note: "W-G1, W-G3 and W-G5: no finding. W-G2 and the gate: fixed (launch marker, implied claims, empty section, name minimum). Left to the owner: home tagline, Team lines, Brevo tracking basis, Art. 49 basis, address, brand PNG metadata."
+  - id: go-live-approval
+    what: "Owner says yes to SITE_MODE=live on the host."
+    status: pending

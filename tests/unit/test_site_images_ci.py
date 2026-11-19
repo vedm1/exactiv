@@ -65,7 +65,11 @@ def test_deploy_app_uses_the_forced_command_key_and_the_deploy_user(cfg: dict[st
 def test_build_images_builds_tests_then_pushes(cfg: dict[str, Any]) -> None:
     text = CONFIG.read_text()
     job = yaml.safe_dump(cfg["jobs"]["build-images"], width=10**6)
-    assert job.index("build_site.py") < job.index("render_caddyfile.py") < job.index("docker build")
+    assert (
+        job.index("build_site_for_image.py")
+        < job.index("render_caddyfile.py")
+        < job.index("docker build")
+    )
     assert job.index("test_image.sh") < job.index("docker push")
     assert "ghcr.io/vedm1/exaktiv/web" in job and "ghcr.io/vedm1/exaktiv/site-form" in job
     assert "GIT_SHA=$CIRCLE_SHA1" in job or "GIT_SHA=${CIRCLE_SHA1}" in job
@@ -235,3 +239,17 @@ def test_smoke_staging_detects_a_missing_password_wall() -> None:
         httpd.shutdown()
     failed = [n for n, ok, _ in results if not ok]
     assert any("401 without password" in n for n in failed), failed
+
+
+def test_w3_check_dns_launch_needs_quarantine_or_reject() -> None:
+    def failed(policy: str) -> list[str]:
+        zone = {
+            **GOOD,
+            ("TXT", "_dmarc.exaktiv.com"): [f'"v=DMARC1; p={policy}; rua=mailto:d@exaktiv.com"'],
+        }
+        res = check_dns.check("exaktiv.com", "188.245.25.106", fake_dig(zone), launch=True)
+        return [n for n, ok, _ in res if not ok]
+
+    assert failed("none") == ["DMARC"]
+    assert failed("quarantine") == []
+    assert failed("reject") == []

@@ -69,7 +69,7 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 - **W-G2** No claim without evidence. A claim appears only when its PRD-W claims register status is "Ready". The EXD5 build fails on a banned claim.
 - **W-G3** No cookies and no requests to third-party domains on any page. Browser check in EXD5 and EXW3.
 - **W-G4** Form submissions are stored in the EU region only and deleted after 6 months. Unit tests for region and retention (EXW1).
-- **W-G5** Legal pages name Valyrian Tech Pvt Ltd and no person.
+- **W-G5** The company name Valyrian Tech Pvt Ltd stands once, in the controller sentence of the privacy notice, and nowhere else on the site (no footer, no schema.org `legalName`, no `llms.txt` line). No person is named. The build fails on any other mention (`check_company_name`). Changed 19 Nov 2026 (user decision); EXW4 adds the legal notice.
 
 ## Single source of record per field
 

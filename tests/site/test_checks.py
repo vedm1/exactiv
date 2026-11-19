@@ -130,7 +130,7 @@ def test_generated_files(build_mini: Callable[..., Path]) -> None:
     assert (out / "llms.txt").is_file()
     html = (out / "index.html").read_text()
     assert '"@type": "Organization"' in html
-    assert '"legalName": "Example Test Ltd"' in html
+    assert "legalName" not in html and "Example Test Ltd" not in html  # EXW3: no company name here
     assert "Person" not in html
 
 
@@ -146,8 +146,8 @@ def test_security_txt_expiry_must_be_in_the_future(
 def test_headers_exact_csp(build_mini: Callable[..., Path]) -> None:
     text = (build_mini() / "_headers").read_text()
     assert (
-        "Content-Security-Policy: default-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
-        in text
+        "Content-Security-Policy: default-src 'self'; img-src 'self' data:; "
+        "frame-ancestors 'none'; form-action 'self'" in text
     )
     for h in (
         "X-Content-Type-Options: nosniff",
@@ -250,4 +250,12 @@ def test_brand_guard_on_site_fails_on_planted_hex(
 ) -> None:
     (mini / "templates" / "extra.css").write_text("a { color: #ff0000; }\n")
     with pytest.raises(build_site.BuildError, match="brand"):
+        build_mini()
+
+
+def test_w_g5_build_fails_when_the_company_name_is_on_another_page(
+    mini: Path, build_mini: Callable[..., Path]
+) -> None:
+    set_body(mini, "<p>A brand of Example Test Ltd.</p>")
+    with pytest.raises(build_site.BuildError, match="names the company"):
         build_mini()

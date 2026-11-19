@@ -56,9 +56,10 @@
 <footer class="ex-footer">
   <div class="ex-footer__in">
     <img src="/assets/logo/exaktiv-lockup-reversed.svg" alt="{{ cfg.brand }}" width="120" height="26">
-    <span class="ex-footer__legal">© 2026 {{ cfg.legal_name }}. {{ cfg.brand }} is a brand of {{ cfg.legal_name }}.</span>
+    <span class="ex-footer__legal">© 2026 {{ cfg.brand }}.</span>
     <span class="ex-footer__links"><a href="/privacy/">Privacy notice</a><a href="/.well-known/security.txt">Security contact</a></span>
   </div>
 </footer>
-</body>
+{% for src in page.scripts %}<script src="{{ src }}" defer></script>
+{% endfor %}</body>
 </html>

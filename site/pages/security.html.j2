@@ -1,8 +1,8 @@
 {% extends "base.html.j2" %}
-{% block h1 %}<h1>Your code stays where you say.</h1>{% endblock %}
-{% block lead %}Here is where your files go, where the AI models run, who sees your code and how long we keep it.{% endblock %}
+{% block h1 %}<h1>Security at Exaktiv.</h1>{% endblock %}
+{% block lead %}How to report a security issue to us. This page lists only what we can show evidence for.{% endblock %}
 {% block content %}
-  <section class="ex-section">
+{% if ready('in-region') %}  <section class="ex-section">
     <div class="ex-wrap">
       <h2>Regions.</h2>
       <p class="ex-measure">{{ backed('in-region', 'AI processing stays in your region.') }}</p>
@@ -18,16 +18,21 @@
       </div>
     </div>
   </section>
-
+{% endif %}
+{% if ready('no-training') or ready('access-logged') or ready('retention') or ready('nda-dpa') %}  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Access and retention.</h2>
+      <div class="ex-pillars">
+{% if ready('no-training') %}        <div class="ex-pillar"><h3>Model use</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} We use model providers only on terms that limit retention. We name the regions and the provider types here. We list the exact providers in the security pack.</p></div>
+{% endif %}{% if ready('access-logged') %}        <div class="ex-pillar"><h3>Access</h3><p>{{ backed('access-logged', 'Access to client code is limited to the named delivery team and is logged.') }} We work inside your own environment when you ask.</p></div>
+{% endif %}{% if ready('retention') %}        <div class="ex-pillar"><h3>Retention</h3><p>{{ backed('retention', 'We delete client files and derived data when the engagement ends, or as the contract says.') }}</p></div>
+{% endif %}{% if ready('nda-dpa') %}        <div class="ex-pillar"><h3>Contracts</h3><p>{{ backed('nda-dpa', 'NDA and DPA on request') }}, with standard contractual clauses.</p></div>
+{% endif %}      </div>
+    </div>
+  </section>
+{% endif %}
   <section class="ex-section">
     <div class="ex-wrap">
-      <h2>Models, access and retention.</h2>
-      <div class="ex-pillars">
-        <div class="ex-pillar"><h3>Model use</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} We use model providers only on terms that limit retention. We name the regions and the provider types here. We list the exact providers in the security pack.</p></div>
-        <div class="ex-pillar"><h3>Access</h3><p>{{ backed('access-logged', 'Access to client code is limited to the named delivery team and is logged.') }} We work inside your own environment when you ask.</p></div>
-        <div class="ex-pillar"><h3>Retention</h3><p>{{ backed('retention', 'We delete client files and derived data when the engagement ends, or as the contract says.') }}</p></div>
-        <div class="ex-pillar"><h3>Contracts</h3><p>NDA before access. {{ backed('nda-dpa', 'NDA and DPA on request') }}, with standard contractual clauses.</p></div>
-      </div>
       <h2>Report a security issue.</h2>
       <p class="ex-measure">Write to <a href="mailto:{{ cfg.security_email }}">{{ cfg.security_email }}</a>. The file <a href="/.well-known/security.txt">security.txt</a> has the same contact.</p>
     </div>

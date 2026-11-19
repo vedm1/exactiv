@@ -75,9 +75,12 @@ Do them in this order. Nothing here changes Caddy, `bin/deploy` or another proje
 10. **Shared Caddy block.** After DNS points at the host and the first deploy is healthy, append the contents of
     `deploy/site/caddy/exaktiv-site.caddy` to `/opt/stack/caddy/Caddyfile` and run
     `docker compose -f /opt/stack/caddy/docker-compose.yml exec caddy caddy reload --config /etc/caddy/Caddyfile`.
-11. **Timers.** As root: copy `deploy/site/systemd/*` to `/etc/systemd/system/`, `systemctl daemon-reload`, then
-    `systemctl enable --now exaktiv-site-retention.timer exaktiv-site-retry-mail.timer exaktiv-site-purge-hits.timer`.
-    Check with `systemctl list-timers 'exaktiv-site-*'` and run each service once by hand (`systemctl start exaktiv-site-retention.service`).
+11. **Jobs: the scheduler container (EXW3, replaces the systemd timers).** The `scheduler` service of the compose file starts with
+    `up` and runs `retry-mail` (every minute), `purge-hits` (hourly) and `retention` (daily, and once at each start). It stays up, so
+    Alloy captures its log. **One time, as root, after the first deploy that contains the scheduler:** stop the old timers so no job runs twice:
+    `systemctl disable --now exaktiv-site-retention.timer exaktiv-site-retry-mail.timer exaktiv-site-purge-hits.timer`, then
+    `rm /etc/systemd/system/exaktiv-site-*.{service,timer}` and `systemctl daemon-reload`. Check: `docker logs exaktiv-site-scheduler-1 2>&1 | grep job_done`
+    shows `retry-mail`, `purge-hits` and `retention` lines.
 12. **Alert (mail path).** Alloy turns each compose project into its own Loki tenant (`project` label = tenant), so Grafana needs a data source
     for the tenant `exaktiv-site`: add to `/opt/stack/observability/datasources.yml` an entry `Loki exaktiv-site` (type `loki`, url
     `http://observability-loki-1:3100`, header `X-Scope-OrgID: exaktiv-site`), then restart `observability-grafana-1`. Rule: Loki query
@@ -85,16 +88,18 @@ Do them in this order. Nothing here changes Caddy, `bin/deploy` or another proje
     first failure (the 401 of 19 Nov 2026 showed as this event). **Built 19 Nov 2026** (user, in the shared Grafana): data source `Exaktiv site logs`,
     rule "Exaktiv site: mail send failed", every 1m, contact point Exaktiv Discord. Set "Alert state if no data" to Normal (the form logs only when
     something happens, so most windows have no data).
-    **Not possible today (tested 19 Nov 2026)**: Alloy does not capture the short-lived `jobs` containers, so `job_done` (retention freshness) and
-    `enquiry_mail_failed` (written by the retry job) never reach Loki. Decision of the user: accept for staging (test data only); the retention
-    monitoring is an EXW3 item. Until then check by hand: `systemctl status exaktiv-site-retention.service`. Options for EXW3: a journald source in
-    Alloy for the `exaktiv-site-*` units, or a long-lived runner container for the jobs.
+    **Job alerts (EXW3, W-G4).** Alloy did not capture the short-lived `jobs` containers (tested 19 Nov 2026), so the jobs now run in the long-lived
+    `scheduler` container (step 11). Two more Grafana rules on the data source `Exaktiv site logs`:
+    (1) retention freshness: `absent_over_time({project="exaktiv-site", service="scheduler"} |= "job_done" |= "retention" [26h])`, fire when it returns
+    a value; (2) a failing job or a mail that failed five times: `sum(count_over_time({project="exaktiv-site", service="scheduler"} |~ "job_failed|enquiry_mail_failed" [15m]))` above 0.
+    Set "Alert state if no data" to Alerting for rule 1 and to Normal for rule 2. Check rule 1 once by stopping the scheduler for a short test window
+    with a 5 minute range, then restore the 26 hour range. Record the date in `docs/launch/EXW3-record.yaml` (`retention-alert`).
 12b. **Brevo authorised IP.** Brevo refuses API calls from an unknown address (`401`, message "unrecognised IP address"). In Brevo open
     SMTP & API, Security, Authorised IPs and add the host address `188.245.25.106`. Found 19 Nov 2026 on the first test enquiry: the log showed
     `mail_attempt_failed` with `status: 401`. Test the key from the host: `docker exec exaktiv-site-form-1 doppler run --no-fallback -- python -c
     "import os,httpx;r=httpx.get('https://api.brevo.com/v3/account',headers={'api-key':os.environ['BREVO_API_KEY']});print(r.status_code)"`
     must print `200`. If the host IP changes, add the new one.
-12c. **Brevo tracking (accepted, anonymous).** Brevo adds an open-tracking pixel and a tracked unsubscribe link to transactional mail, and has no
+12c. **Brevo tracking (accepted, anonymous; the privacy notice says so since EXW3).** Brevo adds an open-tracking pixel and a tracked unsubscribe link to transactional mail, and has no
     per-message switch to remove them (checked 19 Nov 2026). Set Brevo, Settings, Transactional emails, Tracking, "Anonymous email tracking" to **Yes**:
     opens and clicks are then not linked to a contact. Decision of the user, 19 Nov 2026. The privacy notice must say so before EXW3. Verified on a
     test mail: DKIM `PASS` (`d=exaktiv.com`, selector `brevo1`), SPF `PASS` (`mail.exaktiv.com`), DMARC `PASS` (`p=none`).
@@ -105,7 +110,35 @@ Do them in this order. Nothing here changes Caddy, `bin/deploy` or another proje
 
 Staging is `SITE_MODE=staging` in `/opt/stack/exaktiv-site/.env`: one password for the whole site, `X-Robots-Tag: noindex, nofollow`.
 To change the password, put a new bcrypt hash in `.env` and re-run the deploy job (or `docker compose ... up -d` as `deploy`).
-EXW3 builds a launch image (`build_site.py --launch`), sets `SITE_MODE='live'` and deploys. That step is the EXW3 gate, not part of EXW2.
+EXW3 builds a launch image, sets `SITE_MODE='live'` and deploys. See "Go live (EXW3)" below.
+
+## Go live (EXW3)
+
+Do these in order. Every step is reversible until step 5.
+
+1. **Launch record.** Every item in `docs/launch/EXW3-record.yaml` is `done` or `accepted`, except `go-live-approval`.
+   Check: `uv run python scripts/check_launch_record.py` (it lists what is open).
+2. **DMARC.** Change the TXT record `_dmarc.exaktiv.com` from `p=none` to `p=quarantine` (keep your `rua=` address and the other tags).
+   After the change: `python3 scripts/check_dns.py --launch` passes.
+3. **Name list in Doppler.** Doppler project `exaktiv`, config `ci`: add `SITE_NAMES_B64` = base64 of your name list (one name per line; no person,
+   employer or client name goes into the repository). Make it with `base64 < names.txt | tr -d '\n'`. Run the gate on your machine first:
+   `uv run python scripts/build_site.py --launch --names names.txt --out /tmp/launch-check` must pass.
+4. **Launch flag.** Add the file `site/launch.flag` (any text, for example one line "go live") in a commit on `main` (the go-live commit). CI `build-images` then builds the
+   launch site, and fails if `SITE_NAMES_B64` is missing or the record is not complete. `deploy-app` deploys it. At this point the site is still
+   behind the staging password (`SITE_MODE=staging`), so check the launch build there: indexable pages, no `noindex` meta (the password wall still adds the header).
+5. **Go live (needs the owner's yes).** On the host edit `/opt/stack/exaktiv-site/.env`: `SITE_MODE='live'` (remove nothing else), then re-run the deploy job.
+   Check by hand: `https://exaktiv.com/` answers `200` without a password, the response has no `X-Robots-Tag`, `robots.txt` allows all, the sitemap
+   lists the 10 pages, the contact form sends one test enquiry (team mail and automatic reply arrive), and `scripts/smoke_staging.py` now fails on
+   its password checks (expected: the password wall is gone).
+6. **Rollback.** Set `SITE_MODE='staging'` again and re-run the deploy job. To also return to the staging build, delete `site/launch.flag` in a commit.
+
+## Team mailbox: 6-month deletion of enquiries
+
+The team mailbox keeps a copy of each enquiry (subject `New website enquiry: <topic>`). The privacy notice promises 6 months. Google Workspace
+needs Vault for this (Business Standard or Plus). Admin console, Vault, Retention, Create rule: Service Gmail, scope: the `hello@` mailbox
+(or its organisational unit), custom rule with the search term `subject:"New website enquiry"`, retention period 180 days, then delete. Replies
+that the team wrote to a visitor are not matched: add their label or term, or delete them by hand when a case closes. If the plan has no Vault,
+say so in the record and decide: upgrade, or add a monthly manual deletion to the inbox routine. Record the date in the launch record (`mailbox-retention-rule`).
 
 ## Logs and privacy
 
@@ -141,3 +174,10 @@ The database is never rolled back (expand-then-contract revisions only; see the 
 | ghcr.io private packages | 0 | Within the free allowance. |
 
 Total for the EU region: about 17 to 18 dollars per month against the 10 dollar limit (Neon 10, Workspace 6 to 7, domain 1). The server share stays at zero. The user accepted the overrun on 19 Nov 2026.
+
+## Brevo: monthly deletion of old mail content
+
+Brevo deletes the content of transactional mail only when asked (owner, 19 Nov 2026). The privacy notice promises a monthly request for mail older
+than 6 months. Routine: on the first working day of each month, ask Brevo (support request, or the deletion option in the account if it has one)
+to delete the content of transactional mail older than 6 months, and write the date in the inbox routine log. No mail is older than 6 months before May 2027, so the first request
+is due then (owner, 19 Nov 2026). Set a reminder.

@@ -1,9 +1,10 @@
 # Site settings (EXD5). Values marked placeholder are open decisions in PRD-W section 11.
 version: 1
 base_url: "https://exaktiv.com"              # decision D1 (19 Nov 2026)
-legal_name: "Valyrian Tech Pvt Ltd"
+legal_name: "Valyrian Tech Pvt Ltd"      # named in one privacy-notice sentence only (EXW3, 19 Nov 2026)
+registered_address: "Nyati Meadows, Pune, India 411014"
 brand: "Exaktiv"
 lang: "en-GB"
-contact_email: "hello@exaktiv.invalid"        # placeholder: decision D6 (mail on the site domain)
-security_email: "security@exaktiv.invalid"    # placeholder: decision D6
+contact_email: "hello@exaktiv.com"
+security_email: "security@exaktiv.com"
 security_expires: "2027-06-30"                # RFC 9116: renew before this date, at most one year ahead

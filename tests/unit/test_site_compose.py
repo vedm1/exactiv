@@ -87,7 +87,7 @@ def test_site_compose_policy_mirror_rejects(cfg: dict[str, Any], fn: Any, fragme
 
 
 def test_site_compose_services_are_hardened(cfg: dict[str, Any]) -> None:
-    assert set(cfg["services"]) == {"web", "form", "migrate", "jobs"}
+    assert set(cfg["services"]) == {"web", "form", "migrate", "jobs", "scheduler"}
     aliases: list[str] = []
     for name, s in cfg["services"].items():
         assert s["read_only"] is True, name
@@ -118,7 +118,7 @@ def test_site_compose_has_migrate_and_jobs_profiles(cfg: dict[str, Any]) -> None
 
 
 def test_g9_site_compose_holds_only_the_doppler_token(cfg: dict[str, Any]) -> None:
-    for name in ("form", "migrate", "jobs"):
+    for name in ("form", "migrate", "jobs", "scheduler"):
         env = cfg["services"][name]["environment"]
         assert list(env) == ["DOPPLER_TOKEN"], name
         assert env["DOPPLER_TOKEN"].startswith("${DOPPLER_TOKEN:?")
@@ -131,3 +131,17 @@ def test_g9_site_compose_holds_only_the_doppler_token(cfg: dict[str, Any]) -> No
 
 def test_site_compose_web_mode_is_required(cfg: dict[str, Any]) -> None:
     assert cfg["services"]["web"]["environment"]["SITE_MODE"].startswith("${SITE_MODE:?")
+
+
+def test_w_g4_scheduler_is_one_long_lived_hardened_service_on_the_form_image(
+    cfg: dict[str, Any],
+) -> None:
+    """EXW3: the jobs run in a container that stays up, so Alloy sees `job_done` (retention freshness)."""
+    s, form = cfg["services"]["scheduler"], cfg["services"]["form"]
+    assert "profiles" not in s and s["restart"] == "unless-stopped"  # `up` starts it
+    assert s["image"] == form["image"]
+    assert s["read_only"] is True and s["cap_drop"] == ["ALL"] and str(s["user"]) == "10001"
+    cmd = " ".join(s["entrypoint"])
+    assert cmd.endswith("python -m exaktiv_site_form.scheduler")
+    assert "doppler run --no-fallback --" in cmd
+    assert "ports" not in s and "volumes" not in s

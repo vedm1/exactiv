@@ -14,6 +14,12 @@ docker run --rm --entrypoint sh "$img" -c 'test -z "$(ls -A /srv /etc/caddy | gr
   || fail "a secret-like file is inside the image"
 docker run --rm -e SITE_MODE=staging -e STAGING_BASIC_AUTH_HASH='$2a$14$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidin' \
   "$img" caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1 || fail "caddy validate failed in staging mode"
-docker run --rm -e SITE_MODE=live "$img" caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1 \
+docker run --rm -e SITE_MODE=live --entrypoint caddy "$img" validate --config /etc/caddy/Caddyfile >/dev/null 2>&1 \
   || fail "caddy validate failed in live mode"
+# EXW3: live mode starts only with a launch build (the marker file). A staging build must refuse it.
+if docker run --rm --entrypoint sh "$img" -c 'test -f /srv/.launch-built'; then
+  docker run --rm -e SITE_MODE=live "$img" true >/dev/null 2>&1 || fail "a launch build refused SITE_MODE=live"
+else
+  if docker run --rm -e SITE_MODE=live "$img" true >/dev/null 2>&1; then fail "a staging build accepted SITE_MODE=live"; fi
+fi
 echo "ok: $img"

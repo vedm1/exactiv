@@ -1,0 +1,12 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>We could not send your message.</h1>{% endblock %}
+{% block lead %}Check that every required field is filled and within its limits, then send it again. If you sent several messages in a short time, wait 10 minutes.{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Try again.</h2>
+      <p class="ex-measure">Your details were not stored. You can also write to <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+      {% include "_contact_form.html.j2" %}
+    </div>
+  </section>
+{% endblock %}

@@ -242,9 +242,10 @@ jobs:
             fi
       - run: uv sync --frozen
       - run:
-          name: Build the site (staging build) and render the web Caddyfile
+          name: Build the site (staging, or the launch build when site/launch.flag exists) and render the web Caddyfile
           command: |
-            uv run python scripts/build_site.py
+            # SITE_NAMES_B64 (the name list, W-G1) comes from the Doppler ci config. Only the launch build reads it.
+            uv run python scripts/build_site_for_image.py
             uv run python scripts/render_caddyfile.py
       - run:
           name: Build both images (the revision label is the commit)

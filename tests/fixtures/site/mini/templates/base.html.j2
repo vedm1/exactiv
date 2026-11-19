@@ -17,5 +17,6 @@
 {% block content %}{% endblock %}
 {{ cites() }}
 </main>
-</body>
+{% for src in page.scripts %}<script src="{{ src }}" defer></script>
+{% endfor %}</body>
 </html>

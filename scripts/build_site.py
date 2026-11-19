@@ -6,7 +6,8 @@ The build is also the gate. It fails (exit 1, no dist left behind) on:
 - a footnote for a claim whose status is not "ready" (the Trace gate, G1 applied to the site),
 - a banned claim (site/claims.yaml, PRD-W section 6),
 - a third-party URL,
-- a page rule break (one H1, lang, canonical, no inline style or script),
+- a page rule break (one H1, lang, canonical, no inline style or script, no script that the page
+  did not declare in pages.yaml (W-G3)),
 - a personal, employer or client name from the name list (G8),
 - an off-brand pattern (brand/tokens/check_brand.py).
 `--launch` is the stricter launch gate: every used claim ready, no placeholder, names list required.
@@ -33,7 +34,8 @@ from markupsafe import Markup
 
 ROOT = Path(__file__).resolve().parents[1]
 STATUSES = {"ready", "to_confirm", "to_write"}
-CSP = "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
+LAUNCH_MARKER = ".launch-built"
+CSP = "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'"
 HEADERS = {
     "Content-Security-Policy": CSP,
     "X-Content-Type-Options": "nosniff",
@@ -95,6 +97,7 @@ class Claims:
 class SiteConfig:
     base_url: str
     legal_name: str
+    registered_address: str
     brand: str
     lang: str
     contact_email: str
@@ -115,6 +118,11 @@ class Page:
     in_nav: bool
     nav_label: str
     cta: dict[str, str] | None
+    # EXW1-ui: a utility page is a state of the form (thanks, problem), not a PRD-W page. It is
+    # always noindex and stays out of the sitemap and llms.txt.
+    utility: bool = False
+    # Self-hosted scripts this page may load (W-G3). Any other <script> fails the build.
+    scripts: tuple[str, ...] = ()
 
     @property
     def out_file(self) -> str:
@@ -173,6 +181,7 @@ def load_config(site_dir: Path) -> tuple[SiteConfig, list[Page]]:
     cfg = SiteConfig(
         base_url=str(s["base_url"]).rstrip("/"),
         legal_name=str(s["legal_name"]),
+        registered_address=str(s["registered_address"]),
         brand=str(s["brand"]),
         lang=str(s["lang"]),
         contact_email=str(s["contact_email"]),
@@ -195,6 +204,8 @@ def load_config(site_dir: Path) -> tuple[SiteConfig, list[Page]]:
                 if r.get("cta")
                 else None
             ),
+            utility=bool(r.get("utility")),
+            scripts=tuple(str(x) for x in r.get("scripts") or ()),
         )
         for r in p["pages"]  # type: ignore[attr-defined]
     ]
@@ -245,6 +256,13 @@ class Trace:
     def claim(self, claim_id: str) -> str:
         return self._get(claim_id).text
 
+    def ready(self, claim_id: str) -> bool:
+        """True when the claim has its evidence. Pages wrap an unevidenced sentence in
+        `{% if ready(id) %}`, so it appears by itself the day the claim becomes ready."""
+        if claim_id not in self.claims.claims:
+            raise BuildError(f"{self.page.slug}: unknown claim {claim_id!r}")
+        return self.claims.claims[claim_id].status == "ready"
+
     def source_link(self, claim_id: str, label: str) -> Markup:
         claim = self._get(claim_id)
         if not claim.source_url:
@@ -285,6 +303,7 @@ class PageInfo(HTMLParser):
         self.refs: list[str] = []
         self.cite_ids: set[str] = set()
         self.problems: list[str] = []
+        self.scripts: list[str] = []
         self._skip = 0
         self._in_title = False
 
@@ -313,8 +332,10 @@ class PageInfo(HTMLParser):
         elif tag == "style":
             self.problems.append("inline <style> (the CSP blocks it)")
         elif tag == "script":
-            if a.get("type") != "application/ld+json":
-                self.problems.append("<script> (the site ships no JavaScript)")
+            if a.get("src"):
+                self.scripts.append(a["src"])
+            elif a.get("type") != "application/ld+json":
+                self.problems.append("inline <script> (the CSP blocks it)")
         if "style" in a:
             self.problems.append("inline style attribute (the CSP blocks it)")
         if "id" in a and "ex-cite__n" not in a.get("class", ""):
@@ -428,13 +449,39 @@ def check_pages(out: Path, cfg: SiteConfig, pages: list[Page], *, launch: bool) 
         titles[info.title] = where
         descriptions[info.description or ""] = where
         noindex = "noindex" in (info.robots or "")
-        if launch and noindex:
+        if launch and noindex and not page.utility:
             problems.append(f"{where}: noindex in a launch build")
-        if not launch and not noindex:
-            problems.append(f"{where}: a staging build must be noindex")
+        if (not launch or page.utility) and not noindex:
+            problems.append(f"{where}: this build must be noindex for this page")
+        for src in info.scripts:
+            if src not in page.scripts:
+                problems.append(f"{where}: script {src} is not declared for this page (W-G3)")
+        for src in page.scripts:
+            if not (out / src.lstrip("/")).is_file():
+                problems.append(f"{page.slug}: declared script {src} is missing from the build")
         for ref in info.refs:
             if ref.lstrip("#") not in info.cite_ids:
                 problems.append(f"{where}: footnote {ref} has no citation")
+    return problems
+
+
+def check_company_name(out: Path, cfg: SiteConfig) -> list[str]:
+    """W-G5 (EXW3): the company name stands once, in the privacy notice, and nowhere else."""
+    problems: list[str] = []
+    total = 0
+    for p in _dist_files(out):
+        n = p.read_bytes().decode("utf-8", errors="ignore").count(cfg.legal_name)
+        if not n:
+            continue
+        total += n
+        if _rel(out, p) != "privacy/index.html":
+            problems.append(
+                f"{_rel(out, p)}: names the company ({cfg.legal_name}); only the privacy notice may"
+            )
+    if total > 1:
+        problems.append(
+            f"the company name appears {total} times; the privacy notice may name it once"
+        )
     return problems
 
 
@@ -503,6 +550,7 @@ def check_dist(
     pages: list[Page] | None = None,
 ) -> list[str]:
     problems = check_banned(out, claims) + check_urls(out, cfg, claims)
+    problems += check_company_name(out, cfg)
     if pages is not None:
         problems += check_pages(out, cfg, pages, launch=launch)
     if names:
@@ -545,9 +593,23 @@ def copy_brand(brand: Path, out: Path) -> None:
         _copy(brand / "favicon" / name, out, name)
 
 
+def copy_site_assets(site_dir: Path, out: Path) -> None:
+    """Copy site/assets (the self-hosted scripts) next to the brand assets. A clash is an error."""
+    src = site_dir / "assets"
+    if not src.is_dir():
+        return
+    for f in sorted(p for p in src.rglob("*") if p.is_file()):
+        rel = f"assets/{f.relative_to(src).as_posix()}"
+        if (out / rel).exists():
+            raise BuildError(f"site/{rel} clashes with a brand asset")
+        _copy(f, out, rel)
+
+
 def generated_files(cfg: SiteConfig, pages: list[Page], *, launch: bool) -> dict[str, str]:
     urls = "".join(
-        f"  <url><loc>{cfg.base_url}{p.path}</loc></url>\n" for p in pages if p.slug != "404"
+        f"  <url><loc>{cfg.base_url}{p.path}</loc></url>\n"
+        for p in pages
+        if p.slug != "404" and not p.utility
     )
     sitemap = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -559,9 +621,14 @@ def generated_files(cfg: SiteConfig, pages: list[Page], *, launch: bool) -> dict
         else "User-agent: *\nDisallow: /\n"
     )
     listing = "\n".join(
-        f"- [{p.title}]({cfg.base_url}{p.path}): {p.description}" for p in pages if p.slug != "404"
+        f"- [{p.title}]({cfg.base_url}{p.path}): {p.description}"
+        for p in pages
+        if p.slug != "404" and not p.utility
     )
-    llms = f"# {cfg.brand}\n\n> A brand of {cfg.legal_name}.\n\n## Pages\n\n{listing}\n"
+    llms = (
+        f"# {cfg.brand}\n\n> Legacy modernisation and AI product delivery.\n\n"
+        f"## Pages\n\n{listing}\n"
+    )
     security = (
         f"Contact: mailto:{cfg.security_email}\n"
         f"Expires: {cfg.security_expires.isoformat()}T00:00:00Z\n"
@@ -583,7 +650,6 @@ def json_ld(cfg: SiteConfig) -> str:
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": cfg.brand,
-        "legalName": cfg.legal_name,
         "url": cfg.base_url + "/",
         "logo": f"{cfg.base_url}/assets/logo/exaktiv-mark.svg",
     }
@@ -612,13 +678,14 @@ def render_pages(
                 page=page,
                 pages=pages,
                 nav=nav,
-                noindex=not launch,
+                noindex=not launch or page.utility,
                 canonical=cfg.base_url + page.path,
                 json_ld=Markup(json_ld(cfg).replace("<", "\\u003c")),
                 cite=trace.cite,
                 claim=trace.claim,
                 source_link=trace.source_link,
                 backed=trace.backed,
+                ready=trace.ready,
                 cites=trace.cites,
             )
         except BuildError as e:
@@ -658,12 +725,17 @@ def build(
         for rel, html in rendered.items():
             _write(out_dir, rel, html)
         copy_brand(brand_dir, out_dir)
+        copy_site_assets(site_dir, out_dir)
         for rel, text in generated_files(cfg, pages, launch=launch).items():
             _write(out_dir, rel, text)
         problems = check_dist(out_dir, cfg, claims, launch=launch, names=names, pages=pages)
         problems += check_brand(site_dir, out_dir)
         if problems:
             raise BuildError(problems)
+        if (
+            launch
+        ):  # EXW3: the web image starts in live mode only with this marker (site/entrypoint.sh)
+            _write(out_dir, LAUNCH_MARKER, "launch build: every launch check passed\n")
     except BuildError:
         shutil.rmtree(out_dir, ignore_errors=True)  # a failed build leaves nothing to deploy
         raise

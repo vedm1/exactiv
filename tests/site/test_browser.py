@@ -25,6 +25,17 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
         pass
 
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/form-token":  # the form service is not part of this static check
+            body = b'{"token": "static-check"}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
+
 
 @pytest.fixture(scope="module")
 def served(tmp_path_factory: pytest.TempPathFactory) -> Iterator[tuple[str, list[str]]]:

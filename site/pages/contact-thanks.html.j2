@@ -1,0 +1,11 @@
+{% extends "base.html.j2" %}
+{% block h1 %}<h1>Thank you. We have your message.</h1>{% endblock %}
+{% block lead %}A person replies within 1 business day. You also get an automatic reply by email.{% endblock %}
+{% block content %}
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>What happens next.</h2>
+      <p class="ex-measure">The team reads your message and replies from {{ cfg.contact_email }}. We use your details only to reply to you. See our <a href="/privacy/">privacy notice</a>.</p>
+    </div>
+  </section>
+{% endblock %}

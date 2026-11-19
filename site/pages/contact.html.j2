@@ -5,8 +5,15 @@
   <section class="ex-section">
     <div class="ex-wrap">
       <h2>Write to us.</h2>
-      <p class="ex-measure">Email <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>. Say what you need, which topic it falls under and where your data is: EU or UK, India or elsewhere. That tells us which region to set up.</p>
-      <p class="ex-notice"><b>No cookies.</b> This site sets none and loads nothing from third parties. We use your details only to reply to you. See our <a href="/privacy/">privacy notice</a>.</p>
+      <p class="ex-measure">Say what you need, which topic it falls under and where your data is.</p>
+      {% include "_contact_form.html.j2" %}
+    </div>
+  </section>
+  <section class="ex-section">
+    <div class="ex-wrap">
+      <h2>Prefer email?</h2>
+      <p class="ex-measure">Write to <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+      <p class="ex-notice"><b>No cookies.</b> This site sets none and loads nothing from third parties. See our <a href="/privacy/">privacy notice</a>.</p>
     </div>
   </section>
 {% endblock %}

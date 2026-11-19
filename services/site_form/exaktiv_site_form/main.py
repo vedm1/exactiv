@@ -103,7 +103,9 @@ def create_app(
         def refused(code: str, status: int, headers: dict[str, str] | None = None) -> Response:
             if wants_json:
                 return JSONResponse({"error": code}, status_code=status, headers=headers)
-            return RedirectResponse(f"{base}/contact/?errors={code}", status_code=303)
+            # A path with no query string: the static page cannot read a query, and no value may
+            # travel in a URL (G11). The page tells the visitor to check the form or write to us.
+            return RedirectResponse(f"{base}/contact/problem/", status_code=303)
 
         try:
             try:
@@ -145,8 +147,7 @@ def create_app(
                 log_event(log, logging.INFO, "validation_failed", fields=[e.field for e in result])
                 if wants_json:
                     return JSONResponse({"errors": [asdict(e) for e in result]}, status_code=422)
-                names = ",".join(e.field for e in result)
-                return RedirectResponse(f"{base}/contact/?errors={names}", status_code=303)
+                return RedirectResponse(f"{base}/contact/problem/", status_code=303)
 
             enquiry_id = await store.insert_enquiry(result)
             log_event(log, logging.INFO, "enquiry_stored", enquiry_id=str(enquiry_id))

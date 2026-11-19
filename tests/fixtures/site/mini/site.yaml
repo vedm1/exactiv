@@ -1,6 +1,7 @@
 version: 1
 base_url: "https://example.test"
 legal_name: "Example Test Ltd"
+registered_address: "1 Example Road, Example City 000000"
 brand: "Exaktiv"
 lang: "en-GB"
 contact_email: "hello@example.test"

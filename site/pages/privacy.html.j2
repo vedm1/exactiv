@@ -1,26 +1,29 @@
 {% extends "base.html.j2" %}
 {% block h1 %}<h1>Privacy notice.</h1>{% endblock %}
-{% block lead %}How {{ cfg.legal_name }} handles the data you send through this site.{% endblock %}
+{% block lead %}How we handle the data you send through this site.{% endblock %}
 {% block content %}
-  <!-- [[TODO before launch: a data protection lawyer reviews this notice (PRD-W section 8.3)]] -->
   <section class="ex-section">
     <div class="ex-wrap">
       <h2>Who is responsible.</h2>
-      <p class="ex-measure">{{ cfg.legal_name }} is the controller. Its registered address is [[TODO registered address in India]]. Contact: <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+      <p class="ex-measure">{{ cfg.legal_name }} is the controller. Its registered address is {{ cfg.registered_address }}. Contact: <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
       <h2>What we collect.</h2>
-      <p class="ex-measure">The details you send us by email, and server logs. The logs keep a truncated IP address and no more.</p>
+      <p class="ex-measure">The details you send in the contact form: name, work email, company, role, topic, where your data is, and your message. We also keep server logs. For each page request the log holds a shortened IP address, the page, the time and the browser headers, for example the browser type. We keep it 14 days.</p>
+      <p class="ex-measure">To limit spam, the contact form keeps a keyed hash of your IP address for up to 1 hour. The hash cannot be turned back into the address.</p>
+      <p class="ex-measure">If the server fails, or a secure connection cannot be set up, the error log of our host can hold the full IP address, the page address and the request headers. We keep that log 14 days too. We use logs only to keep the site secure and working.</p>
       <h2>Why, and on what basis.</h2>
       <p class="ex-measure">To reply to your enquiry and to take steps before a contract (GDPR Art. 6(1)(b)). To keep the site secure (Art. 6(1)(f)).</p>
       <h2>Who receives it.</h2>
-      <p class="ex-measure">Our hosting provider and our email provider. Each acts under a data processing agreement.</p>
+      <p class="ex-measure">Four processors act for us: a hosting provider (Germany), a database provider (Frankfurt), an email-sending provider (EU) and a mailbox provider (Google Workspace, EU data region). Each acts under a data processing agreement.</p>
+      <h2>Email tracking.</h2>
+      <p class="ex-measure">Our automatic reply is sent by our email provider. The provider counts opens and clicks of that email in anonymous form. It does not link them to you.</p>
       <h2>Transfers outside the EU.</h2>
       <p class="ex-measure">Our team reads enquiries in India. India has no EU adequacy decision. The basis is your own request before a contract (Art. 49(1)(b)), and standard contractual clauses with our processors.</p>
       <h2>How long we keep it.</h2>
-      <p class="ex-measure">Enquiries: 6 months, unless they lead to a contract. Server logs: 14 days.</p>
+      <p class="ex-measure">Enquiries: 6 months in our database and in our team mailbox, unless they lead to a contract. Our email provider keeps the mail it sends until we ask it to delete it. We ask it every month to delete mail older than 6 months. Server logs: 14 days.</p>
       <h2>Your rights.</h2>
       <p class="ex-measure">You may ask for access, correction, erasure, restriction, objection and portability. You may complain to a data protection authority.</p>
       <h2>Cookies, tracking and automated decisions.</h2>
-      <p class="ex-measure">This site sets no cookies and uses no tracking. We make no automated decisions about you.</p>
+      <p class="ex-measure">This site sets no cookies and has no tracking scripts. The only tracking is the anonymous open count in our reply email. We make no automated decisions about you.</p>
       <h2>India.</h2>
       <p class="ex-measure">The main duties of India’s Digital Personal Data Protection Act apply from 13 May 2027. We write this notice so that it also meets them.</p>
     </div>

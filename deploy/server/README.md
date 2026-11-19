@@ -44,7 +44,18 @@ Automatic on a failed health check. By hand: re-run the deploy job for an older 
 
 ## Neon restore test
 
-**Moved to EXW3, before the site goes public (decision 19 Nov 2026).** Not needed while only test data exists. Then: create a Neon branch from a point in time, read one known row, delete the branch. Record the date and the result here.
+**Skipped by the owner, 19 Nov 2026 (risk accepted).** The steps below stay valid if the test is done later.
+
+**Moved to EXW3, before the site goes public (decision 19 Nov 2026).** Do it before `SITE_MODE=live`, because the first real enquiries cannot be recreated.
+Steps (Neon console, project of the `exaktiv` database, Frankfurt). Read only `id` and `created_at`, never the message (G11):
+
+1. In the production database run `SELECT id, created_at FROM site_enquiries ORDER BY created_at DESC LIMIT 1;` (use a test enquiry). Write down the `id` and the time.
+2. Neon console, Branches, **Create branch**. Parent: `main` (production). Choose **Past data** and set a time a few minutes AFTER the `created_at` of that row and before now (the time must be inside the plan's restore window). Name it `restore-test-<date>`. Create.
+3. Open the branch, **Connect**, copy the connection string (direct, not pooled). Run `psql "<string>" -c "SELECT id, created_at FROM site_enquiries WHERE id = '<id from step 1>';"`. Pass: one row, the same `id` and `created_at`.
+4. Delete the branch (Branches, the branch, Delete). Check that only `main` is left, so no compute keeps running and costing money.
+5. Fill the table below (date, `PASS` or `FAIL` and the branch time you used), then set `neon-restore-test` in `docs/launch/EXW3-record.yaml` to `done` with the date.
+
+If step 3 returns no row: the time was before the row existed, or outside the restore window. Delete the branch and try again with a later time. Neon bills branch compute while it runs. The cost of a few minutes is small. Tell the owner of the 10 dollar limit if the plan shows more.
 
 | Date | Result |
 |------|--------|

@@ -126,8 +126,22 @@ async def test_form_client_gets_303_and_no_values_in_url(env: Env) -> None:
     err = await env.client.post("/enquiries", content=bad, headers=headers)
     assert err.status_code == 303
     location = err.headers["location"]
-    assert location == "https://site.example.test/contact/?errors=name,email"
-    assert "Test" not in location and "example.test/contact/?errors=name,email" in location
+    # EXW1-ui: a path with no query string. The static page cannot read a query, and no value may
+    # travel in a URL (G11).
+    assert location == "https://site.example.test/contact/problem/"
+    assert "?" not in location and "Test" not in location
+
+
+async def test_service_redirects_to_problem_path_without_values(env: Env) -> None:
+    headers = {"content-type": "application/x-www-form-urlencoded"}
+    for _ in range(5):
+        body = urlencode({"form_token": env.token()})
+        await env.client.post("/enquiries", content=body, headers=headers)
+    limited = await env.client.post(
+        "/enquiries", content=urlencode({"form_token": env.token(), **VALID_FORM}), headers=headers
+    )
+    assert limited.status_code == 303
+    assert limited.headers["location"] == "https://site.example.test/contact/problem/"
 
 
 async def test_oversize_body_returns_413(env: Env) -> None:

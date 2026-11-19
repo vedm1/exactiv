@@ -25,7 +25,7 @@ At launch there is no analytics tool. We measure through the form and the inbox.
 
 These rules are not open for design choice. A page that breaks one does not go live.
 
-1. **No personal names.** No founder or team names, photos, LinkedIn links or personal email addresses. The site shows combined team experience only. Legal pages name the company, Valyrian Tech Pvt Ltd, and no person.
+1. **No personal names.** No founder or team names, photos, LinkedIn links or personal email addresses. The site shows combined team experience only. The company name, Valyrian Tech Pvt Ltd, stands on one line of the privacy notice (the controller) and nowhere else on the site. No person is named. (Decision of 19 Nov 2026, EXW3.)
 2. **No employer names.** Do not name any current or past employer of the team.
 3. **No client names or logos.** No case study that can identify a client. Describe past work by sector and size only.
 4. **No pricing.** Prices go in proposals.
@@ -45,7 +45,7 @@ The main reader is an engineering leader at a software vendor who got our link i
 | Engineering leader (CTO, VP Engineering) at a software vendor | Can we modernise legacy code without stopping the roadmap? | A traceable method, a staged offer, low risk | Legacy Modernisation |
 | Head of Product | Can we help ship AI features that customers use? | Delivery experience, AI skills, a clear way to start | AI Product Delivery |
 | Security or compliance reviewer | Where does our code and data go, who sees it, which AI models touch it? | Specific answers: regions, retention, no training, human approval | Security and data handling |
-| Procurement | Who are they, and how do we contract? | A clear contact route and the contracting entity, Valyrian Tech Pvt Ltd | Contact, legal pages |
+| Procurement | Who are they, and how do we contract? | A clear contact route. The controller is named in the privacy notice (the legal notice in phase 2 names the contracting entity) | Contact, privacy notice |
 | Partner agency | Can they add AI product or modernisation capacity to our projects? | Capability list, fast reply | Contact |
 
 ## 4. Positioning, messaging and voice
@@ -77,10 +77,10 @@ Every page supports one or more of the four proof pillars below. These pillars a
 
 ## 5. Sitemap and page requirements
 
-The site has 10 pages at launch. The legal notice is added in phase 2.
+The site has 10 pages at launch. The legal notice is added in phase 2. Two utility pages, `/contact/thanks/` and `/contact/problem/`, are states of the contact form: always noindex, not in the sitemap, not counted here (EXW1-ui).
 
 **Main navigation:** Capabilities (menu with 3 items) · How we work · Security · Team · Contact (button).
-**Footer:** Privacy notice · Security contact (security.txt) · © Valyrian Tech Pvt Ltd. "Exaktiv is a brand of Valyrian Tech Pvt Ltd." Phase 2: Legal notice.
+**Footer:** Privacy notice · Security contact (security.txt) · © 2026 Exaktiv. No company name in the footer (EXW3, 19 Nov 2026). Phase 2: Legal notice.
 
 | Page | Purpose | Must contain | Primary call to action |
 | --- | --- | --- | --- |
@@ -245,7 +245,7 @@ Exaktiv gets its own identity, built on the Ved Design System v4 tokens. It does
 | Accessibility | WCAG 2.2 level AA: contrast, keyboard use, visible focus, form labels, alt text | Automated check plus a manual keyboard test |
 | Build | Static site. The only server-side part is the form endpoint. | Code review |
 | Browsers | Latest 2 versions of Chrome, Edge, Safari and Firefox, on desktop and mobile | Manual test |
-| SEO | Unique title and description per page, Open Graph image, sitemap.xml, robots.txt, canonical URLs, schema.org Organization with legalName Valyrian Tech Pvt Ltd (no Person data) | SEO check |
+| SEO | Unique title and description per page, Open Graph image, sitemap.xml, robots.txt, canonical URLs, schema.org Organization with name, url and logo only: no legalName and no Person data (EXW3, 19 Nov 2026) | SEO check |
 | AI search | Clean semantic HTML, one clear H1 per page, an llms.txt file that summarises the capabilities | Manual check |
 | Language | lang="en-GB" on every page | Code review |
 | Hosting | EU region, $10 per month or less | Provider invoice |
@@ -284,7 +284,7 @@ The site launches when every item in the definition of done is ticked. Close dec
 | --- | --- | --- |
 | The site describes services that overlap with a team member's current employer | Employment dispute | Finish the employment contract check before launch. The email and any contract will name the sender, whatever the site shows. |
 | No legal notice while a commercial site serves EU buyers | Warning letters or fines (up to €50,000 in Germany) ([source](https://www.ihk.de/rhein-neckar/recht/wirtschaftsrecht/internet/informationspflichten-internet-938654)) | Global framing with no country targeting. Add the legal notice before the first contract. Ask a lawyer to confirm the timing. |
-| GDPR requires the privacy notice to name the controller | The privacy notice is incomplete | Resolved: the notice names Valyrian Tech Pvt Ltd (D3) |
+| GDPR requires the privacy notice to name the controller | The privacy notice is incomplete | Resolved: the notice names Valyrian Tech Pvt Ltd in one sentence, with its registered address (D3) |
 | A claim goes live before its evidence exists | Loss of trust at the first security review | Claims register gate (section 6) |
 | Spam through the form | Wasted time, noise in the inbox | Honeypot, minimum fill time, rate limit |
 

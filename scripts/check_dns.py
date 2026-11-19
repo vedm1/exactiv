@@ -1,6 +1,6 @@
 """Check the DNS records of the site domain (EXW2). Run by hand after the DNS change; it needs `dig`.
 
-Usage: python3 scripts/check_dns.py [--domain exaktiv.com] [--ip 188.245.25.106] [--dkim-selector brevo1]
+Usage: python3 scripts/check_dns.py [--domain exaktiv.com] [--ip 188.245.25.106] [--dkim-selector brevo1] [--launch]
 Exit 0 when every check passes. The DKIM selector and record type are the ones Brevo shows on its "authenticate
 domain" page; confirm them there (they are not in this repository on purpose).
 """
@@ -29,7 +29,9 @@ def _txt(values: list[str]) -> list[str]:
     return ["".join(part for part in v.replace('" "', "").split('"') if part) for v in values]
 
 
-def check(domain: str, ip: str, dig: Dig, dkim_selector: str = "brevo1") -> list[Result]:
+def check(
+    domain: str, ip: str, dig: Dig, dkim_selector: str = "brevo1", *, launch: bool = False
+) -> list[Result]:
     out: list[Result] = []
     a = dig("A", domain)
     out.append(("A record", ip in a, f"{domain} -> {', '.join(a) or 'nothing'} (want {ip})"))
@@ -66,8 +68,13 @@ def check(domain: str, ip: str, dig: Dig, dkim_selector: str = "brevo1") -> list
     out.append(
         (
             "DMARC",
-            bool(policy),
-            f"policy p={policy or 'missing'} (move none to quarantine before EXW3)",
+            policy in {"quarantine", "reject"} if launch else bool(policy),
+            f"policy p={policy or 'missing'}"
+            + (
+                " (launch needs quarantine or reject)"
+                if launch
+                else " (use --launch before EXW3 go-live)"
+            ),
         )
     )
     return out
@@ -78,8 +85,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--domain", default="exaktiv.com")
     parser.add_argument("--ip", default="188.245.25.106")
     parser.add_argument("--dkim-selector", default="brevo1")
+    parser.add_argument(
+        "--launch", action="store_true", help="DMARC must be quarantine or reject (EXW3)"
+    )
     args = parser.parse_args(argv)
-    results = check(args.domain, args.ip, real_dig, args.dkim_selector)
+    results = check(args.domain, args.ip, real_dig, args.dkim_selector, launch=args.launch)
     for name, ok, detail in results:
         print(f"{'PASS' if ok else 'FAIL'}  {name}: {detail}")
     return 0 if all(ok for _, ok, _ in results) else 1

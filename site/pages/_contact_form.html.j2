@@ -1,0 +1,51 @@
+{#- The contact form (PRD-W section 7). The limits below are tested against services/site_form validation. -#}
+{# Values and labels equal the service enums; tests/site/test_contact_form.py checks that. #}
+{% set topics = [("legacy_modernisation", "Legacy modernisation"), ("ai_product_delivery", "AI product delivery"), ("product_data_early_access", "Product data early access"), ("partnership", "Partnership"), ("other", "Other")] %}
+{% set regions = [("eu_uk", "EU or UK"), ("india", "India"), ("other", "Other")] %}
+{% macro field(name, label, kind="text", required=true, min=None, max=None, auto=None, wide=false, hint=None, placeholder=None) %}
+    <div class="ex-field{% if wide %} ex-field--wide{% endif %}">
+      <label for="f-{{ name }}">{{ label }}{% if not required %} <span class="ex-field__opt">(optional)</span>{% endif %}{% if hint %} <span class="ex-field__opt">({{ hint }})</span>{% endif %}</label>
+{%- if kind == "textarea" %}
+      <textarea class="ex-textarea" id="f-{{ name }}" name="{{ name }}" rows="6"{% if required %} required{% endif %}{% if min %} minlength="{{ min }}"{% endif %} maxlength="{{ max }}" aria-describedby="f-{{ name }}-error"></textarea>
+{%- elif kind == "select" %}
+      <select class="ex-select" id="f-{{ name }}" name="{{ name }}"{% if required %} required{% endif %} aria-describedby="f-{{ name }}-error">
+        <option value="">{{ placeholder }}</option>
+{{ caller() }}
+      </select>
+{%- else %}
+      <input class="ex-input" id="f-{{ name }}" name="{{ name }}" type="{{ kind }}"{% if required %} required{% endif %}{% if min %} minlength="{{ min }}"{% endif %} maxlength="{{ max }}"{% if auto %} autocomplete="{{ auto }}"{% endif %} aria-describedby="f-{{ name }}-error">
+{%- endif %}
+      <p class="ex-field__error" id="f-{{ name }}-error" hidden></p>
+    </div>
+{% endmacro %}
+<form class="ex-form" id="contact-form" method="post" action="/enquiries"
+  data-msg-required="Enter a value for this field."
+  data-msg-too-short="This value is too short."
+  data-msg-too-long="This value is too long."
+  data-msg-invalid-email="Enter a valid email address."
+  data-msg-invalid-choice="Choose one of the listed options."
+  data-msg-fix="Fix the fields marked below, then send your message again."
+  data-msg-rate-limited="You sent too many messages in a short time. Wait 10 minutes and try again, or email us."
+  data-msg-failed="We could not send your message. Try again, or email us.">
+{{ field("name", "Name", min=2, max=100, auto="name") }}
+{{ field("email", "Work email", kind="email", max=254, auto="email") }}
+{{ field("company", "Company", min=2, max=150, auto="organization") }}
+{{ field("role", "Role", required=false, max=100, auto="organization-title") }}
+{% call field("topic", "Topic", kind="select", placeholder="Choose a topic") %}
+{%- for value, label in topics %}        <option value="{{ value }}">{{ label }}</option>
+{% endfor %}{% endcall %}
+{% call field("data_region", "Where is your data?", kind="select", required=false, placeholder="Not sure") %}
+{%- for value, label in regions %}        <option value="{{ value }}">{{ label }}</option>
+{% endfor %}{% endcall %}
+{{ field("message", "Message", kind="textarea", min=20, max=2000, wide=true, hint="20 to 2,000 characters") }}
+    <div class="ex-honeypot">
+      <label for="f-website">Leave this field empty</label>
+      <input class="ex-honeypot" id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <input type="hidden" id="f-form_token" name="form_token" value="">
+    <p class="ex-notice ex-field--wide" id="form-status" role="status" hidden></p>
+    <div class="ex-form__send">
+      <button class="ex-btn ex-btn--primary ex-btn--go" type="submit">Send message</button>
+      <p class="ex-measure">We use your details only to reply to you. See our <a href="/privacy/">privacy notice</a>.</p>
+    </div>
+</form>

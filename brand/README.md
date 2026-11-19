@@ -19,12 +19,13 @@ and every page reads like a document that a reviewer can check.
 | `logo/png/` | Each SVG as PNG with a transparent ground. Marks at 256, 512 and 1024 px wide. Lockups at 600, 1200 and 2400 px wide. |
 | `favicon/` | `favicon.svg`, `favicon.ico` (16, 32, 48), `favicon-16/32/48.png`, `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, `app-icon.svg`, `site.webmanifest`. |
 | `social/og-image.png` | Open Graph image, 1200 × 630 (PRD-W §10). |
+| `email/` | Email signature banners as PNG at 2x: `exaktiv-email-banner-paper@2x.png` and `-ink@2x.png` (show at 600 × 150), `-strip@2x.png` (show at 600 × 64). `email-signature.html` is a paste-ready signature block. |
 | `fonts/` | Self-hosted woff2 files (Latin and Latin Extended), `fonts.css`, and the three SIL Open Font Licence texts. |
 | `tokens/tokens.css` | **Source of truth** for all tokens. Raw values, role tokens, dark mode, print, reduced motion. |
 | `tokens/tokens.json` | W3C design tokens format. Generated. |
 | `tokens/tokens.ts` | `ex` (CSS variable references), `light` and `dark` (resolved values for canvas, charts and PDF). Generated. |
 | `tokens/build_tokens.py` | Generates `tokens.json` and `tokens.ts` from `tokens.css`. |
-| `tokens/check_brand.py` | Guard checks for CI: WCAG contrast of 32 text pairs, generated files current, no banned patterns. |
+| `tokens/check_brand.py` | Guard checks for CI: WCAG contrast of 30 text pairs, generated files current, no banned patterns. |
 | `components/exaktiv.css` | Base styles and all components: buttons, links, the Trace, header, footer, cards, pillars, steps, finding card, tables, forms, notices, hero, print. |
 | `icons/arrow-right.svg` | The arrow for buttons and links. The fonts have no "→" glyph, so never type the arrow character. |
 
@@ -40,7 +41,8 @@ and every page reads like a document that a reviewer can check.
 8. **Square and flat.** Radius 0. Rules 1.5 px. Accent edges 6 px. No shadows, no blur, no gradients except the evidence band.
 9. **One vermilion button per screen.** Text on vermilion is always Ink, never Paper.
 10. **The Trace gate.** A claim gets a footnote number only when its status in the PRD-W claims register is "Ready".
-11. **No names.** No person, employer or client names in any asset, file name or metadata (PRD-W constraint 1 to 3).
+11. **Logo follows the theme.** On a dark ground, use the `-reversed` file. In plain HTML, use `<picture>` with a `(prefers-color-scheme: dark)` source; in React, switch the file on the `data-theme` value.
+12. **No names.** No person, employer or client names in any asset, file name or metadata (PRD-W constraint 1 to 3).
 
 ## How to load it
 

@@ -7,7 +7,7 @@ claims:
     text: "26+ years of combined experience"
     status: ready
     evidence: "Both CVs"
-    cite: "Combined career length of the team, from the CVs held by Valyrian Tech Pvt Ltd."
+    cite: "Combined career length of the team, from the CVs held by the company."
     pages: [home, team]
   - id: in-region
     text: "AI processing stays in your region"
@@ -19,6 +19,8 @@ claims:
     status: to_confirm
     evidence: "Provider terms with no-training and no-retention settings, plus our written policy"
     pages: [home, security, how-we-work]
+  # Off the pages at launch (19 Nov 2026): the legacy analyser does not exist yet. Pages show these sentences
+  # only through {% if ready(id) %}, so they appear by themselves when the claim becomes ready.
   - id: findings-sourced
     text: "Every finding links to its source"
     status: to_confirm
@@ -26,8 +28,9 @@ claims:
     pages: [home, how-we-work, legacy-modernisation]
   - id: human-approval
     text: "No change without human approval"
-    status: to_write
-    evidence: "Written engagement process"
+    status: ready   # owner approved docs/evidence/human-approval.md on 19 Nov 2026
+    evidence: "Written engagement process (docs/evidence/human-approval.md)"
+    cite: "Written engagement process: a named person on the client side signs off each stage before the next one starts."
     pages: [home, how-we-work]
   - id: nda-dpa
     text: "NDA and DPA on request"
@@ -43,39 +46,43 @@ claims:
   # Added in EXD5. The Security page states these rules (PRD-W section 8.1), so they need a register row.
   - id: access-logged
     text: "Access to client code is limited to the named delivery team and is logged"
-    status: to_write
+    status: to_write   # draft in docs/evidence/access-logged.md needs the real mechanism and a sample log
     evidence: "Written access-control procedure and a sample access log"
     pages: [security]
   - id: retention
     text: "We delete client files and derived data when the engagement ends, or as the contract says"
-    status: to_write
+    status: to_write   # draft in docs/evidence/retention.md needs the real deletion step and a sample record
     evidence: "Written retention policy"
     pages: [security]
-  # The "Why now" box (PRD-W section 12). Evidence is the source page. Nobody has checked the dates
-  # against the sources yet, so each stays to_confirm.
+  # The "Why now" box (PRD-W section 12). Evidence is the source page. The dates were checked on 19 Nov 2026
+  # (EXW3, docs/evidence/why-now-dates.md).
   - id: eu-cra
     text: "Cyber Resilience Act: reporting of actively exploited vulnerabilities applies since 11 September 2026, also for products already on the market. Full duties, including the SBOM, apply from 11 December 2027."
-    status: to_confirm
-    evidence: "Source page, dates checked against the regulation text"
+    status: ready
+    evidence: "Source page. Dates checked 19 Nov 2026 against Regulation (EU) 2024/2847, Art. 14 and Art. 71 (docs/evidence/why-now-dates.md)"
+    cite: "Regulation (EU) 2024/2847 (Cyber Resilience Act): Art. 14 applies from 11 September 2026, the regulation from 11 December 2027."
     source_url: "https://www.noze.it/en/insights/cyber-resilience-act-sbom/"
     pages: [legacy-modernisation]
   - id: eu-data-act
     text: "EU Data Act: cloud switching rules apply since 12 September 2025. Switching and egress charges are banned from 12 January 2027."
-    status: to_confirm
-    evidence: "Source page, dates checked against the regulation text"
+    status: ready
+    evidence: "Source page. Dates checked 19 Nov 2026 against Regulation (EU) 2023/2854, Art. 29 and Art. 50 (docs/evidence/why-now-dates.md)"
+    cite: "Regulation (EU) 2023/2854 (Data Act): applies since 12 September 2025. Switching charges end on 12 January 2027."
     source_url: "https://www.cloudmagazin.com/en/2026/07/15/eu-data-act-makes-cloud-portability-mandatory/"
     pages: [legacy-modernisation]
   - id: eu-nis2
-    text: "NIS2: now national law in member states. In Germany since 6 December 2025. Customers pass its supply-chain duties on to their software suppliers."
-    status: to_confirm
-    evidence: "Source page, dates checked against the national law"
+    text: "NIS2: now national law in several member states. In Germany since 6 December 2025. Supply-chain security is a duty for the companies in scope."
+    status: ready
+    evidence: "Source page and a second source on the supplier duty, checked 19 Nov 2026 (docs/evidence/why-now-dates.md)"
+    cite: "German NIS2 implementation act, in force since 6 December 2025. Supply chain security is one of its required risk-management measures."
     source_url: "https://www.secfix.com/post/germanys-new-nis2-cybersecurity-law"
     pages: [legacy-modernisation]
   - id: eu-ai-act
     text: "EU AI Act: high-risk duties for stand-alone systems apply from 2 December 2027, and for AI in regulated products from 2 August 2028."
-    status: to_confirm
-    evidence: "Source page, dates checked against the omnibus text"
-    source_url: "https://www.gibsondunn.com/eu-ai-act-omnibus-agreement-postponed-high-risk-deadlines-and-other-key-"
+    status: ready
+    evidence: "Source page. Omnibus adopted and in force since 27 July 2026, checked 19 Nov 2026 (docs/evidence/why-now-dates.md)"
+    cite: "Digital Omnibus on AI, published in the Official Journal on 24 July 2026, in force since 27 July 2026."
+    source_url: "https://www.lewissilkin.com/insights/2026/07/27/the-digital-omnibus-on-ai-enters-into-force-today-102nedo"
     pages: [legacy-modernisation]
 
 # Banned claims (PRD-W section 6). The build fails when any pattern matches page text, a title,
@@ -93,4 +100,4 @@ external_allow:
   - {url: "https://www.noze.it/en/insights/cyber-resilience-act-sbom/", claim: eu-cra}
   - {url: "https://www.cloudmagazin.com/en/2026/07/15/eu-data-act-makes-cloud-portability-mandatory/", claim: eu-data-act}
   - {url: "https://www.secfix.com/post/germanys-new-nis2-cybersecurity-law", claim: eu-nis2}
-  - {url: "https://www.gibsondunn.com/eu-ai-act-omnibus-agreement-postponed-high-risk-deadlines-and-other-key-", claim: eu-ai-act}
+  - {url: "https://www.lewissilkin.com/insights/2026/07/27/the-digital-omnibus-on-ai-enters-into-force-today-102nedo", claim: eu-ai-act}

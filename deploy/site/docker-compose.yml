@@ -80,7 +80,17 @@ services:
     networks:
       edge: {}
 
-  # Started by the systemd timers (deploy/site/systemd): `--profile jobs run --rm -T --no-deps jobs <retention|retry-mail|purge-hits>`.
+  # EXW3: one long-lived runner for the three jobs (retry-mail every minute, purge-hits hourly, retention daily). It stays up,
+  # so Alloy sees its log and an alert can watch for `job_done job=retention`. It replaces the systemd timers.
+  scheduler:
+    <<: *form
+    entrypoint: ["doppler", "run", "--no-fallback", "--", "python", "-m", "exaktiv_site_form.scheduler"]
+    # No healthcheck on purpose: `restart: unless-stopped` restarts a crashed process, and job freshness is the Grafana alert.
+    mem_limit: 256m
+    networks:
+      edge: {}
+
+  # For a manual run: `--profile jobs run --rm -T --no-deps jobs <retention|retry-mail|purge-hits>`.
   # `up` never starts it (profile).
   jobs:
     <<: *form

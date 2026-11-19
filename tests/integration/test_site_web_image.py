@@ -59,12 +59,14 @@ def stack(tmp_path_factory: pytest.TempPathFactory) -> Iterator[dict[str, str]]:
     (ctx / "dist").mkdir()
     (ctx / "dist/index.html").write_text("<!doctype html><title>synthetic</title>")
     (ctx / "dist/404.html").write_text("<!doctype html><title>missing</title>")
+    (ctx / "dist/.launch-built").write_text("synthetic launch build\n")  # live mode needs it (EXW3)
     (ctx / "build").mkdir()
     (ctx / "build/Caddyfile").write_text(
         render_caddyfile.render((ROOT / "site/Caddyfile.tmpl").read_text(), build_site.HEADERS)
     )
     shutil.copytree(ROOT / "site/caddy", ctx / "caddy")
     shutil.copy(ROOT / "site/Dockerfile", ctx / "Dockerfile")
+    shutil.copy(ROOT / "site/entrypoint.sh", ctx / "entrypoint.sh")
     upstream_conf = (
         "{\n\tadmin off\n\tauto_https off\n}\n:8000 {\n"
         '\trespond "xff={http.request.header.X-Forwarded-For};auth={http.request.header.Authorization};path={http.request.uri.path}"\n}\n'

@@ -392,7 +392,7 @@ Existing tests stay green. `circleci config validate` runs on the file. `setup.s
 - **Changes to the spec.**
   - Decisions D1, D4 and D6 are still open. `base_url` and both mail addresses are `*.invalid` placeholders, and the privacy notice has a `[[TODO registered address]]`. `--launch` fails on all of them.
   - The nav is flat (6 links and a Contact button). There is no "Capabilities" menu, because a menu needs JavaScript or extra CSS.
-  - The Contact page has a mailto link and no form until EXW1-ui.
+  - The Contact page has a mailto link and no form until EXW1-ui. (Done in EXW1-ui: the form is on the page, the mailto link stays as the second route.)
   - The sample finding uses the brand form "billing/Invoice.java, line 142" in Instrument Sans (the PRD copy deck sets it in monospace, which the brand bans).
   - The header button is secondary. The hero button is the one vermilion button (brand rule 9).
 - **Claims added to the register:** `access-logged` and `retention` (`to_write`), because the Security page states them. Four "Why now" claims (`to_confirm`): nobody has checked their dates against the sources. The `pages:` lists of the pillar claims include Home and How we work.
@@ -597,8 +597,8 @@ Deviation from the phase list: three extra columns (`team_notified_at`, `autorep
 | Case | JSON client | Form client (no `Accept: application/json`) |
 |---|---|---|
 | Stored, or honeypot filled (identical on purpose) | `201 {"status":"received"}` | `303` to `{site_base_url}/contact/thanks/` |
-| Invalid | `422 {"errors":[{"field","code","message"}]}` | `303` to `{site_base_url}/contact/?errors=name,email` (field names only; never values in a URL) |
-| Rate limited | `429 {"error":"rate_limited"}` + `Retry-After` | `303` to `/contact/?errors=rate_limited` |
+| Invalid | `422 {"errors":[{"field","code","message"}]}` | `303` to `{site_base_url}/contact/problem/` (changed in EXW1-ui: a path, no query string, no values) |
+| Rate limited | `429 {"error":"rate_limited"}` + `Retry-After` | `303` to `/contact/problem/` (changed in EXW1-ui) |
 | Token present but too fast, forged or expired | silently dropped as spam: `201` | `303` to thanks |
 | Token missing (no JavaScript) | stored, but counted against the stricter limit of 2 per 10 minutes per IP (`429` above that) | same |
 
@@ -681,6 +681,17 @@ Add settings `rate_limit_max_no_token: int = 2` and a test `test_missing_token_i
 **Objective**: Put the PRD-W §7 form on the EXD5 Contact page and connect it to EXW1.
 **Prerequisites**: EXW1 ✅, EXD5 ✅.
 **Rough scope**: plain HTML form that works without JavaScript (POST to EXW1); inline validation when JavaScript is on; field errors; confirmation state; privacy line under the button; no new third-party request (W-G3).
+
+### EXW1-ui Implementation notes (19 Nov 2026)
+
+- **Built as specced.** Form include `site/pages/_contact_form.html.j2` (used by Contact and the problem page), `site/assets/contact.js`, utility pages `contact-thanks` and `contact-problem`, `pages.yaml` keys `utility: true` and `scripts: [...]`, `build_site.py` rules, service redirects to `/contact/problem/`, CSP `form-action 'self'`.
+- **Changes to the spec.** On success the script goes to `/contact/thanks/` (the same page as the no-JavaScript path) in place of replacing the form in place. The contact page has no hero button (`cta: null`), so the submit button is the one vermilion button (brand rule 9); the mailto link is in the body. The script reads the limits from the field attributes. The service checks them again, and a test checks that the HTML limits equal the service rules at the boundaries.
+- **EXD5 rule changed.** "No JavaScript" became "no inline script, and only a script that `pages.yaml` declares for that page". Only `/assets/contact.js` on the Contact and problem pages is declared. The build fails on any other script and on a declared script that is missing.
+- **Utility pages.** Always noindex, also in a launch build (the launch noindex check skips them), not in `sitemap.xml` or `llms.txt`, not in the PRD-W count of 10 pages.
+- **Token timing.** The script waits until 3.5 s after the token arrived before it sends, because the service drops an earlier post silently. It refreshes a token older than 1 hour (the service refuses 2 hours).
+- **Tests.** `tests/site/test_form_pages.py` (build rules), `test_contact_form.py` (markup against the service), `test_contact_form_browser.py` (real service with fakes, PRD-W AC1 to AC5, no JavaScript, keyboard, G11, W-G3). The static browser check answers `/form-token` with a stub.
+- **Lighthouse.** 100 everywhere, except best practices 96 on the two form pages: the Lighthouse static server has no `/form-token`, so the console shows one 404. The real service answers it.
+- **Not verified.** The live Caddy path (POST through the web image and the shared Caddy to the form service on the staging host) and the web image build with the new assets. Check both after the next deploy with `scripts/smoke_staging.py` plus one real submission. The browser matrix (Safari, Firefox) and a screen reader test are open (EXW3).
 
 ## EXW2 — EU hosting and deploy
 
@@ -863,6 +874,13 @@ Built as ONE phase (the user's decision), repository side. **Not closed**: the h
 **Prerequisites**: EXW2 ✅, EXW1-ui ✅; open items "claims evidence", "lawyer review" and "employment contract check".
 **Rough scope**: the PRD-W §11 definition of done on staging; every claim in the register "Ready" with its evidence; the lawyer review and the employment check recorded in the build plan; the EXD5 browser and Lighthouse checks green on staging; one Neon restore test (create a Neon branch from a point in time, read one known row, delete the branch, record the date and the result in `deploy/server/README.md`) before the staging password is removed, because the first real enquiries (personal data that cannot be recreated) arrive after that; then remove the staging password.
 **Gating check**: an independent subagent review of the definition of done (W-G1, W-G2, W-G3).
+
+### EXW3 Implementation notes (19 Nov 2026, build done, site not live)
+
+- **Decisions of the user, 19 Nov 2026.** The legacy analyser does not exist (it needs to be built: see `docs/prd/PRD-L-exaktiv-legacy-analyser.md`). `hello@` and `security@` exist. Registered address Nyati Meadows, Pune, India 411014. The company name stands on one privacy-notice line and nowhere else (W-G5 rewritten in `CLAUDE.md`, build gate `check_company_name`, no footer, no `legalName`, no `llms.txt` line). No person is named. Employment contract risk accepted. Brevo DPA signed. The privacy notice wording was reviewed by the user. DMARC, the name list, the go-live yes and the Neon restore test are the user's steps.
+- **Built.** `ready()` helper: a page shows an unevidenced sentence only while its claim is `ready` (`{% if ready(id) %}`), so launch builds pass and pages upgrade themselves. Four claims are off the pages (`findings-sourced`, `in-region`, `no-training`, `nda-dpa`). Four why-now claims are `ready` after a date check (`docs/evidence/why-now-dates.md`; the NIS2 text was narrowed to its source, the AI Act source changed to a post-adoption page). Three claims have drafts (`human-approval` complete and waiting for the owner; `access-logged` and `retention` need real mechanisms). `site/launch.flag` + `scripts/build_site_for_image.py` (launch build in CI only with the flag, the name list from Doppler `SITE_NAMES_B64` with at least 3 names, and a complete record). `scripts/check_launch_record.py` and `docs/launch/EXW3-record.yaml` (16 items). `check_dns.py --launch` (DMARC quarantine or reject). `scheduler` container replaces the systemd timers (retention freshness is now visible to Alloy; two Grafana rules in `deploy/site/README.md`). Go-live and rollback runbook, mailbox Vault rule and Neon restore steps in the READMEs.
+- **Independent review (subagent, 19 Nov 2026).** W-G3: no finding. W-G1 and W-G5: no finding. **Fixed:** the gate bypass (SITE_MODE=live with a staging build): the launch build writes `.launch-built`, and `site/entrypoint.sh` refuses live mode without it (tested in the image); a one-line name list is refused; implied claims reworded or hidden (home description, "traceable", "line by line", Product Data "designed to", "tests that compare", "region to set up", "approvals in writing", Security h1, lead and CTA, empty Security section, the finding sample now needs `findings-sourced`); NIS2 "several member states"; the privacy notice now names the browser headers in the access log and the 1 hour IP hash for spam limits. **Not fixed, for the user:** see the final report of this session (home title and h1 "AI you can audit", Team "Past work" lines, Brevo "anonymous" tracking and its legal basis, Art. 49(1)(b) basis, the residential-looking address, C2PA metadata in brand PNGs, the record is self-attested: protect `main`, `docs/launch` and `site/launch.flag` with a review).
+- **Verified.** 454 unit and site tests, ruff, mypy, brand check, Lighthouse 96 to 100 on all 12 pages, the web image test (`site/test_image.sh`) and the 10 image integration tests, native build. **Not verified:** the scheduler against the live database and Brevo, the CI launch build in CircleCI (needs the Doppler variable), and every human item in the record.
 
 ## EXW4 — Legal notice and analytics
 

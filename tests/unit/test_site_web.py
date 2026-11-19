@@ -100,28 +100,9 @@ def test_shared_caddy_block_has_no_log_and_no_app_import() -> None:
     assert re.search(r"^exaktiv\.com \{", text, re.MULTILINE)
 
 
-@pytest.mark.parametrize(
-    "name, calendar",
-    [
-        ("retention", r"OnCalendar=\*-\*-\* 03:15:00 UTC"),
-        ("retry-mail", r"OnUnitActiveSec=1min"),
-        ("purge-hits", r"OnCalendar=hourly"),
-    ],
-)
-def test_w_g4_timers_run_the_form_jobs(name: str, calendar: str) -> None:
-    timer = (SYSTEMD / f"exaktiv-site-{name}.timer").read_text()
-    service = (SYSTEMD / f"exaktiv-site-{name}.service").read_text()
-    assert re.search(calendar, timer)
-    assert f"Unit=exaktiv-site-{name}.service" in timer or "Unit=" not in timer
-    assert "WantedBy=timers.target" in timer
-    assert "User=deploy" in service and "Type=oneshot" in service
-    assert re.search(rf"--profile jobs run --rm -T --no-deps jobs {name}\b", service)
-    assert "IMAGE_TAG=$$(cat .current)" in service  # $$ is a literal dollar sign for systemd
-    assert "TimeoutStartSec=300" in service  # a hung call must not block every later run
-    if name == "retention":
-        assert "Persistent=true" in timer  # a missed daily run still happens (W-G4)
-        assert "Restart=on-failure" in service and "RestartSec=300" in service
-    assert not re.search(r"dp\.(st|pt|sa)\.|BREVO|DATABASE_URL", timer + service)
+def test_w_g4_the_scheduler_container_replaced_the_systemd_timers() -> None:
+    """EXW3: the jobs run in one long-lived container (see test_site_compose and test_site_form_scheduler)."""
+    assert not SYSTEMD.exists()
 
 
 def test_site_base_url_is_the_real_domain() -> None:

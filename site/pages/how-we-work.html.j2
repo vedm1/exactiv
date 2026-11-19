@@ -1,30 +1,31 @@
 {% extends "base.html.j2" %}
-{% block h1 %}<h1>Four rules, built into the work.</h1>{% endblock %}
-{% block lead %}We promise only what our own engine enforces. These four rules apply to every engagement.{% endblock %}
+{% block h1 %}<h1>How an engagement runs, stage by stage.</h1>{% endblock %}
+{% block lead %}We promise only what we can show you evidence for.{% endblock %}
 {% block content %}
-  <section class="ex-section">
+{% if ready('findings-sourced') or ready('in-region') or ready('no-training') or ready('human-approval') %}  <section class="ex-section">
     <div class="ex-wrap">
-      <h2>What every engagement guarantees.</h2>
+      <h2>What every engagement includes.</h2>
       <div class="ex-pillars">
-        <div class="ex-pillar"><h3>Traceable</h3><p>{{ backed('findings-sourced', 'Every finding links to its source.') }} In code, that is a file and a line. In a document, it is a page and an area.</p></div>
-        <div class="ex-pillar"><h3>In-region</h3><p>{{ backed('in-region', 'AI processing stays in your region.') }} If a region is not available, the task stops and goes to a person.</p></div>
-        <div class="ex-pillar"><h3>Private</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} Your data never helps another client.</p></div>
-        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change without human approval.') }} A person on your side approves each stage before the next one starts.</p></div>
-      </div>
+{% if ready('findings-sourced') %}        <div class="ex-pillar"><h3>Traceable</h3><p>{{ backed('findings-sourced', 'Every finding links to its source.') }} In code, that is a file and a line. In a document, it is a page and an area.</p></div>
+{% endif %}{% if ready('in-region') %}        <div class="ex-pillar"><h3>In-region</h3><p>{{ backed('in-region', 'AI processing stays in your region.') }} If a region is not available, the task stops and goes to a person.</p></div>
+{% endif %}{% if ready('no-training') %}        <div class="ex-pillar"><h3>Private</h3><p>{{ backed('no-training', 'We never train models on your code or data.') }} Your data never helps another client.</p></div>
+{% endif %}{% if ready('human-approval') %}        <div class="ex-pillar"><h3>Human-approved</h3><p>{{ backed('human-approval', 'No change without human approval.') }} A person on your side approves each stage before the next one starts.</p></div>
+{% endif %}      </div>
     </div>
   </section>
+{% endif %}
 
   <section class="ex-section">
     <div class="ex-wrap">
       <h2>How an engagement runs.</h2>
       <ol class="ex-steps">
-        <li><h3>Talk</h3><p>A first call on your goal, your systems and your data region. An NDA comes before any access.</p></li>
-        <li><h3>Scope</h3><p>We agree the stages, the deliverables and the approvals in writing.</p></li>
-        <li><h3>Deliver</h3><p>We work in short stages. You review the result of each stage and approve it.</p></li>
+        <li><h3>Talk</h3><p>A first call on your goal, your systems and your data region.</p></li>
+        <li><h3>Scope</h3><p>We agree the stages and the deliverables in writing.</p></li>
+        <li><h3>Deliver</h3><p>We work in short stages. You review the result of each stage.</p></li>
         <li><h3>Hand over</h3><p>You receive the artefacts, the tests and the notes your team needs to continue.</p></li>
       </ol>
       <h2>What we need from you.</h2>
-      <p class="ex-measure">Access to the code or documents, in your own environment if you prefer. One named technical contact. One person who approves each stage.</p>
+      <p class="ex-measure">Access to the code or documents, in your own environment if you prefer. One named technical contact. One person who decides for your team.</p>
     </div>
   </section>
 {% endblock %}
