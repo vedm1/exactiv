@@ -138,15 +138,17 @@ def test_launch_claims_state_of_the_real_register() -> None:
         assert status[cid] != "ready", f"{cid} has no evidence yet"
 
 
-def test_real_site_has_one_self_hosted_script_on_the_form_pages_and_no_inline_style(
+def test_real_site_scripts_are_self_hosted_theme_everywhere_and_contact_on_the_form_pages(
     dist: Path,
 ) -> None:
-    allowed = '<script src="/assets/contact.js" defer></script>'
+    theme = '<script src="/assets/theme.js"></script>'
+    contact = '<script src="/assets/contact.js" defer></script>'
     form_pages = {"contact/index.html", "contact/problem/index.html"}
     for f in dist.rglob("*.html"):
         text = f.read_text().replace('<script type="application/ld+json">', "")
+        assert theme in text, f.name
         if str(f.relative_to(dist)) in form_pages:
-            assert text.count("<script") == 1 and allowed in text, f.name
+            assert text.count("<script") == 2 and contact in text, f.name
         else:
-            assert "<script" not in text, f.name
+            assert text.count("<script") == 1, f.name
         assert "<style" not in text

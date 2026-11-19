@@ -41,7 +41,7 @@ and every page reads like a document that a reviewer can check.
 8. **Square and flat.** Radius 0. Rules 1.5 px. Accent edges 6 px. No shadows, no blur, no gradients except the evidence band.
 9. **One vermilion button per screen.** Text on vermilion is always Ink, never Paper.
 10. **The Trace gate.** A claim gets a footnote number only when its status in the PRD-W claims register is "Ready".
-11. **Logo follows the theme.** On a dark ground, use the `-reversed` file. In plain HTML, use `<picture>` with a `(prefers-color-scheme: dark)` source; in React, switch the file on the `data-theme` value.
+11. **Logo follows the theme.** On a dark ground, use the `-reversed` file. In plain HTML with a theme button (the website), use two `<img>` elements with `.ex-logo--light` and `.ex-logo--dark`; the CSS shows one by the system setting or by `data-theme`. Without a button, `<picture>` with a `(prefers-color-scheme: dark)` source works too; in React, switch the file on the `data-theme` value.
 12. **No names.** No person, employer or client names in any asset, file name or metadata (PRD-W constraint 1 to 3).
 
 ## How to load it

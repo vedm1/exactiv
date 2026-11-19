@@ -23,16 +23,21 @@
 <link rel="stylesheet" href="/assets/fonts/fonts.css">
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/exaktiv.css">
+<script src="/assets/theme.js"></script>
 <script type="application/ld+json">{{ json_ld }}</script>
 </head>
 <body>
 <header class="ex-header">
   <div class="ex-header__in">
-    <a class="ex-header__logo" href="/" aria-label="{{ cfg.brand }}, home"><img src="/assets/logo/exaktiv-lockup.svg" alt="{{ cfg.brand }}" width="140" height="30"></a>
-    <nav class="ex-nav" aria-label="Main">
-{% for p in nav %}      <a href="{{ p.path }}"{% if p.slug == page.slug %} aria-current="page"{% endif %}>{{ p.nav_label }}</a>
-{% endfor %}    </nav>
-    <a class="ex-btn ex-header__cta" href="/contact/">Contact</a>
+    <a class="ex-header__logo" href="/" aria-label="{{ cfg.brand }}, home"><img class="ex-logo--light" src="/assets/logo/exaktiv-lockup.svg" alt="{{ cfg.brand }}" width="140" height="30"><img class="ex-logo--dark" src="/assets/logo/exaktiv-lockup-reversed.svg" alt="" width="140" height="30"></a>
+    <button class="ex-menu" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-panel">Menu</button>
+    <div class="ex-header__panel" id="site-panel">
+      <nav class="ex-nav" aria-label="Main">
+{% for p in nav %}        <a href="{{ p.path }}"{% if p.slug == page.slug %} aria-current="page"{% endif %}>{{ p.nav_label }}</a>
+{% endfor %}      </nav>
+      <button class="ex-theme" id="theme-toggle" type="button" aria-pressed="false" hidden>Dark mode</button>
+      <a class="ex-btn ex-header__cta" href="/contact/">Contact</a>
+    </div>
   </div>
 </header>
 

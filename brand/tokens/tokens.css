@@ -132,6 +132,9 @@
   --ex-inverse: var(--ex-raw-night-raised);
 }
 
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
 @media print {
   :root, :root[data-theme="dark"] { --ex-ground: #FFFFFF; --ex-raised: #FFFFFF; --ex-text: var(--ex-raw-ink); --ex-rule: var(--ex-raw-ink); --ex-source: var(--ex-raw-cobalt); }
 }

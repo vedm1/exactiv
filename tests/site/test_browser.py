@@ -104,3 +104,126 @@ def test_every_page_has_no_cookies_no_third_party_request_and_is_light(
         overflow = page.evaluate("document.documentElement.scrollWidth > window.innerWidth")
         assert not overflow, f"{path}: horizontal scroll at {viewport[0]}px"
         context.close()
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_evidence_band_text_and_logo_are_readable_in_both_colour_schemes(
+    served: tuple[str, list[str]], browser: Browser, scheme: str
+) -> None:
+    """EXW3: Lighthouse runs in light mode only. A visitor in dark mode must read the page."""
+    base, paths = served
+    for path in paths:
+        context = browser.new_context(color_scheme=scheme)  # type: ignore[arg-type]
+        page = context.new_page()
+        page.goto(base + path, wait_until="networkidle")
+        bad = page.evaluate(
+            """() => {
+              const probe = document.createElement('span');
+              probe.style.color = 'var(--ex-on-evidence)';
+              document.body.appendChild(probe);
+              const want = getComputedStyle(probe).color;
+              return [...document.querySelectorAll('.ex-mark')]
+                .map(e => getComputedStyle(e).color).filter(c => c !== want);
+            }"""
+        )
+        assert not bad, f"{path} ({scheme}): evidence-band text is not the on-evidence colour"
+        shown = page.evaluate(
+            """() => [...document.querySelectorAll('.ex-header__logo img')]
+                 .filter(i => getComputedStyle(i).display !== 'none').map(i => i.currentSrc)"""
+        )
+        want = "exaktiv-lockup-reversed.svg" if scheme == "dark" else "exaktiv-lockup.svg"
+        assert len(shown) == 1 and shown[0].endswith(want), f"{path} ({scheme}): wrong header logo"
+        context.close()
+
+
+def test_theme_button_switches_the_theme_keeps_it_and_stores_no_cookie(
+    served: tuple[str, list[str]], browser: Browser
+) -> None:
+    """EXW3: the visitor can choose the other theme. The choice stays in localStorage (W-G3)."""
+    base, _ = served
+    context = browser.new_context(color_scheme="dark")
+    page = context.new_page()
+    page.goto(base + "/", wait_until="networkidle")
+    button = page.locator("#theme-toggle")
+    assert button.is_visible() and button.get_attribute("aria-pressed") == "true"
+    ground = "getComputedStyle(document.body).backgroundColor"
+    dark_ground = page.evaluate(ground)
+    button.click()
+    assert page.evaluate("document.documentElement.dataset.theme") == "light"
+    assert button.get_attribute("aria-pressed") == "false"
+    assert page.evaluate(ground) != dark_ground
+    page.goto(base + "/team/", wait_until="networkidle")  # the choice holds on the next page
+    assert page.evaluate("document.documentElement.dataset.theme") == "light"
+    assert page.evaluate("localStorage.getItem('ex-theme')") == "light"
+    assert context.cookies() == [] and page.evaluate("document.cookie") == ""
+    page.locator("#theme-toggle").click()
+    assert page.evaluate("document.documentElement.dataset.theme") == "dark"
+    context.close()
+
+
+def test_theme_button_is_hidden_without_javascript(
+    served: tuple[str, list[str]], browser: Browser
+) -> None:
+    base, _ = served
+    context = browser.new_context(java_script_enabled=False)
+    page = context.new_page()
+    page.goto(base + "/", wait_until="networkidle")
+    assert not page.locator("#theme-toggle").is_visible()
+    context.close()
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1024, 1180, 1181, 1440])
+def test_every_page_fits_the_screen_at_each_width(
+    served: tuple[str, list[str]], browser: Browser, width: int
+) -> None:
+    """EXW3: no page scrolls sideways and no element sticks out, at any width."""
+    base, paths = served
+    context = browser.new_context(viewport={"width": width, "height": 800})
+    page = context.new_page()
+    for path in paths:
+        page.goto(base + path, wait_until="networkidle")
+        assert not page.evaluate("document.documentElement.scrollWidth > innerWidth"), (
+            f"{path} at {width}px: sideways scroll"
+        )
+        wide = page.evaluate(
+            """() => [...document.querySelectorAll('body *')]
+              .filter(e => !e.closest('.ex-table-box, .ex-code')
+                           && getComputedStyle(e).display !== 'none'
+                           && e.getBoundingClientRect().right > innerWidth + 1)
+              .map(e => e.tagName + '.' + e.className).slice(0, 5)"""
+        )
+        assert not wide, f"{path} at {width}px: elements past the right edge {wide}"
+    context.close()
+
+
+def test_menu_collapses_on_narrow_screens_and_opens_by_button_and_closes_on_escape(
+    served: tuple[str, list[str]], browser: Browser
+) -> None:
+    base, _ = served
+    context = browser.new_context(viewport={"width": 390, "height": 800})
+    page = context.new_page()
+    page.goto(base + "/", wait_until="networkidle")
+    nav, menu = page.locator(".ex-nav"), page.locator("#menu-toggle")
+    assert menu.is_visible() and not nav.is_visible()
+    assert page.locator(".ex-header").bounding_box()["height"] < 100  # type: ignore[index]
+    menu.click()
+    assert nav.is_visible() and menu.get_attribute("aria-expanded") == "true"
+    page.keyboard.press("Escape")
+    assert not nav.is_visible() and menu.get_attribute("aria-expanded") == "false"
+    context.close()
+    wide = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = wide.new_page()
+    page.goto(base + "/", wait_until="networkidle")
+    assert page.locator(".ex-nav").is_visible() and not page.locator("#menu-toggle").is_visible()
+    wide.close()
+
+
+def test_without_javascript_the_nav_stays_visible_on_a_phone(
+    served: tuple[str, list[str]], browser: Browser
+) -> None:
+    base, _ = served
+    context = browser.new_context(viewport={"width": 390, "height": 800}, java_script_enabled=False)
+    page = context.new_page()
+    page.goto(base + "/", wait_until="networkidle")
+    assert page.locator(".ex-nav").is_visible() and not page.locator("#menu-toggle").is_visible()
+    context.close()

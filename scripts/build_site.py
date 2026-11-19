@@ -35,6 +35,9 @@ from markupsafe import Markup
 ROOT = Path(__file__).resolve().parents[1]
 STATUSES = {"ready", "to_confirm", "to_write"}
 LAUNCH_MARKER = ".launch-built"
+GLOBAL_SCRIPTS = (
+    "/assets/theme.js",
+)  # on every page (the theme button); other scripts are per page
 CSP = "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'"
 HEADERS = {
     "Content-Security-Policy": CSP,
@@ -454,9 +457,9 @@ def check_pages(out: Path, cfg: SiteConfig, pages: list[Page], *, launch: bool) 
         if (not launch or page.utility) and not noindex:
             problems.append(f"{where}: this build must be noindex for this page")
         for src in info.scripts:
-            if src not in page.scripts:
+            if src not in page.scripts and src not in GLOBAL_SCRIPTS:
                 problems.append(f"{where}: script {src} is not declared for this page (W-G3)")
-        for src in page.scripts:
+        for src in (*page.scripts, *(x for x in info.scripts if x in GLOBAL_SCRIPTS)):
             if not (out / src.lstrip("/")).is_file():
                 problems.append(f"{page.slug}: declared script {src} is missing from the build")
         for ref in info.refs:
