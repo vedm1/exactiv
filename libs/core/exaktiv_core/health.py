@@ -4,9 +4,8 @@ import asyncio
 from typing import Literal
 
 import asyncpg  # type: ignore[import-untyped]
+import psycopg
 from pydantic import BaseModel, Field
-from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
-from temporalio.client import Client
 
 from exaktiv_core.settings import Settings
 from exaktiv_core.storage import ensure_bucket, s3_client
@@ -18,13 +17,13 @@ CHECK_TIMEOUT_S = 2.0
 class HealthReport(BaseModel):
     postgres: ComponentStatus = "down"
     minio: ComponentStatus = "down"
-    temporal: ComponentStatus = "down"
+    dbos: ComponentStatus = "down"
     # Exception class names only. No message, host or secret (G9, G11).
     detail: dict[str, str] = Field(default_factory=dict)
 
     @property
     def all_ok(self) -> bool:
-        return self.postgres == self.minio == self.temporal == "ok"
+        return self.postgres == self.minio == self.dbos == "ok"
 
 
 async def _check_postgres(s: Settings) -> None:
@@ -47,15 +46,21 @@ async def _check_minio(s: Settings) -> None:
     await asyncio.to_thread(ensure_bucket, s3_client(s), s.minio_bucket)
 
 
-async def _check_temporal(s: Settings) -> None:
-    client = await Client.connect(s.temporal_address, namespace=s.temporal_namespace)
-    await client.workflow_service.describe_namespace(
-        DescribeNamespaceRequest(namespace=s.temporal_namespace)
-    )
+async def _check_dbos(s: Settings) -> None:
+    url = s.dbos_system_url().replace("postgresql+psycopg://", "postgresql://", 1)
+    conn = await psycopg.AsyncConnection.connect(url, connect_timeout=int(CHECK_TIMEOUT_S))
+    async with conn:
+        cur = await conn.execute(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = %s AND table_name = 'dbos_migrations'",
+            (s.dbos_system_schema,),
+        )
+        if await cur.fetchone() is None:
+            raise LookupError("DBOS schema missing")
 
 
 async def build_report(s: Settings) -> HealthReport:
-    checks = {"postgres": _check_postgres, "minio": _check_minio, "temporal": _check_temporal}
+    checks = {"postgres": _check_postgres, "minio": _check_minio, "dbos": _check_dbos}
     report = HealthReport()
 
     async def run(name: str) -> None:

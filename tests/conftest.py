@@ -56,3 +56,17 @@ async def pg_pool(migrated_dsn: str) -> AsyncIterator[asyncpg.Pool]:
         yield pool
     finally:
         await pool.close()
+
+
+# ---- DBOS (EXK0-dbos): the runtime creates schema `dbos` on launch ----
+@pytest.fixture
+async def dbos_runtime(stack_settings: Settings) -> AsyncIterator[None]:
+    from dbos import DBOS
+    from exaktiv_worker.dbos_app import dbos_config
+
+    DBOS(config=dbos_config(stack_settings))
+    await asyncio.to_thread(DBOS.launch)
+    try:
+        yield
+    finally:
+        await asyncio.to_thread(DBOS.destroy)

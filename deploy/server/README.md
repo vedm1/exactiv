@@ -1,7 +1,7 @@
 # Exaktiv server deploy (EXK0b)
 
 Host: Hetzner Nuremberg (`eu-central nbg1`), shared with other projects. Exaktiv changes only its own files.
-Postgres is on Neon (Frankfurt). Temporal is added in its own phase. This stack is MinIO only.
+Postgres is on Neon (Frankfurt). DBOS (workflows) keeps its tables there, in schema `dbos`, and connects to the Neon direct host (not the pooled host). This stack is MinIO only.
 
 ## How a deploy works
 

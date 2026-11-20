@@ -6,10 +6,10 @@ from exaktiv_core.settings import Settings
 pytestmark = pytest.mark.integration
 
 
-async def test_health(stack_settings: Settings) -> None:
+async def test_health(stack_settings: Settings, dbos_runtime: None) -> None:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://t") as client:
         response = await client.get("/health")
     assert response.status_code == 200
     body = response.json()
-    assert (body["postgres"], body["minio"], body["temporal"]) == ("ok", "ok", "ok")
+    assert (body["postgres"], body["minio"], body["dbos"]) == ("ok", "ok", "ok")

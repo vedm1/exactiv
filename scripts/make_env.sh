@@ -14,9 +14,6 @@ MINIO_ENDPOINT=http://localhost:9000
 MINIO_ACCESS_KEY=exaktiv$(openssl rand -hex 4)
 MINIO_SECRET_KEY=$(rand)
 MINIO_BUCKET=exaktiv-smoke
-TEMPORAL_ADDRESS=localhost:7233
-TEMPORAL_NAMESPACE=default
-TEMPORAL_TASK_QUEUE=exaktiv-smoke
 ENV
 chmod 600 .env
 echo "created .env"

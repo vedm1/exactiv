@@ -23,9 +23,20 @@ Record each model and dataset here before first use. Base models: Apache 2.0 or 
 | Caddy (web server of the site image) | 2.11.4 | Apache-2.0 | https://github.com/caddyserver/caddy | `caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b` | Serves the static site behind the shared Caddy (`site/Dockerfile`). Unmodified. | 19 Nov 2026 |
 | Doppler CLI | 3.76.6 | Apache-2.0 (upstream `LICENSE`, read 19 Nov 2026) | https://github.com/DopplerHQ/cli | package pinned by SHA-256 in `services/site_form/doppler-cli.sha256` | Hands secrets to the form service at start (`doppler run`). Unmodified. | 19 Nov 2026 |
 
+## Python libraries of note
+
+| Library | Version | Licence | Source | Use | Checked on |
+|---------|---------|---------|--------|-----|------------|
+| DBOS Transact | 3.6.0 | MIT | https://github.com/dbos-inc/dbos-transact-py | Workflow engine in `services/worker`. State in our Postgres (schema `dbos`). No Conductor, no cloud service. | 20 Nov 2026 |
+| psycopg and psycopg-binary | 3.3.9 | LGPL-3.0-only | https://github.com/psycopg/psycopg | Required by DBOS (and used by `/health`). Unmodified, used as a library through import, not distributed. Exception in `config/licence_exceptions.yaml`. | 20 Nov 2026 |
+
 AGPL-3.0 note: Exaktiv runs MinIO unmodified for its own internal use. It does not distribute MinIO and does not offer it as a network service to others. If we ever modify MinIO, or expose it to customers, record a new review here first.
 
 ## Datasets
 
 | Dataset | Version | Licence | Source URL | Used for | Checked on |
 |---------|---------|---------|------------|----------|------------|
+| Spring PetClinic | commit `500158f` (main, 20 Nov 2026) | Apache-2.0 (upstream `LICENSE.txt`, read 20 Nov 2026) | https://github.com/spring-projects/spring-petclinic | Legacy analyser smoke test for a modern build and the SCIP path (EXL1, EXL3). Test input only, never training data. | 20 Nov 2026 |
+| Apache OFBiz (subset of about 100,000 lines) | commit `9e79def` (trunk, 20 Nov 2026) | Apache-2.0 (upstream `LICENSE`, read 20 Nov 2026); the `NOTICE` file travels with the subset | https://github.com/apache/ofbiz-framework | Legacy analyser cost and time per thousand lines on a real ERP code base (EXL1, EXL2). Test input only, never training data. | 20 Nov 2026 |
+| Large public code base, toward 5 million lines | not chosen | not recorded | choose in EXL8 | Legacy analyser scale test. Record the licence before first use (G12). | not checked |
+| One public C# or C++ project | not chosen | not recorded | choose in EXL11 | Second language pack. Record the licence before first use (G12). | not checked |

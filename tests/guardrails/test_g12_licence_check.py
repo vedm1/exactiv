@@ -1,6 +1,7 @@
 """G12: licence allow list."""
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -61,4 +62,10 @@ def test_g12_licences_md_has_headers() -> None:
     assert "| Model | Version | Licence | Source URL | Checked on |" in tables
     assert any(ln.startswith("| Dataset | Version | Licence |") for ln in tables)
     data_rows = [ln for ln in tables if not ln.startswith(("| Model", "| Dataset", "|--"))]
-    assert data_rows == []
+    # Since EXL0 the Datasets table holds test corpora. A row is valid only with an allowed
+    # licence and a check date, or with "not chosen" (licence recorded before first use).
+    for row in data_rows:
+        if "not chosen" in row:
+            continue
+        assert "Apache-2.0" in row or "MIT" in row, f"licence not allowed or missing: {row[:60]}"
+        assert re.search(r"\d{1,2} \w{3} 20\d\d", row), f"no check date: {row[:60]}"

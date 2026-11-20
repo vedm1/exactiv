@@ -1,5 +1,5 @@
 # Exaktiv server stack (EXK0b). Deployed only by deploy-infra, which checks deploy/server/policy.py first.
-# Postgres is on Neon (Frankfurt), not here. Temporal is added in its own phase.
+# Postgres is on Neon (Frankfurt), not here. DBOS keeps its tables in that Postgres (schema dbos).
 # Secrets MINIO_ACCESS_KEY and MINIO_SECRET_KEY come from Doppler (written to .env by deploy-infra).
 name: exaktiv
 

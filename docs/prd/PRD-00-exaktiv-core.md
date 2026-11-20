@@ -38,7 +38,7 @@ Buyers in regulated or standardised work also need proof: where each value came 
 - No model training on one tenant's data for another tenant.
 - No self-serve sign-up. Tenants are set up by the team.
 - No mobile app.
-- No Kafka in v1. Temporal handles the workflows. Add Kafka when event volume needs it.
+- No Kafka in v1. DBOS Transact handles the workflows (decision of 20 Nov 2026). Add Kafka when event volume needs it.
 
 ## 4. Users
 

@@ -2,7 +2,7 @@
 name = "exaktiv-worker"
 version = "0.0.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["exaktiv-core", "temporalio"]
+dependencies = ["exaktiv-core", "dbos"]
 
 [build-system]
 requires = ["hatchling"]

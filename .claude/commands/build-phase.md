@@ -37,7 +37,7 @@ Alembic migration and backfill strategy, request/response contracts, `config/` f
 
 **If `implement`** (only after spec approval): follow the approved spec. TDD — failing tests first, then build
 inside-out (data/types → logic → interface). Surgical changes: touch only what this phase slice needs.
-Stack reminders: Python 3.12, uv workspace, FastAPI, Temporal Python SDK, Postgres 16 + Alembic, MinIO, LiteLLM (pinned digest);
+Stack reminders: Python 3.12, uv workspace, FastAPI, DBOS Transact, Postgres 16 + Alembic, MinIO, LiteLLM (pinned digest);
 UI in `ui/` with pnpm, React + TypeScript strict, tokens in `ui/src/tokens/`. Local stack: `docker compose -f deploy/docker-compose.yml up -d`.
 Fixtures: synthetic or public only, each with a `SOURCE.md` note (G8).
 

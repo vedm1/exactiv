@@ -1,1 +1,1 @@
-"""Exaktiv Temporal workers and workflows."""
+"""Exaktiv DBOS workers and workflows."""

@@ -18,9 +18,9 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 
 | Item | Decision |
 |---|---|
-| Repository | Monorepo: `services/api` (FastAPI), `services/worker` (Temporal workers), `model/` (model service, gateway client, training), `ui/` (React + TypeScript), `config/` (versioned schemas, rules, value lists), `docs/prd/` |
+| Repository | Monorepo: `services/api` (FastAPI), `services/worker` (DBOS workflows), `model/` (model service, gateway client, training), `ui/` (React + TypeScript), `config/` (versioned schemas, rules, value lists), `docs/prd/` |
 | Backend language | Python 3.12 only. Kotlin is **not** in the stack. |
-| Workflows | Temporal (Python SDK). No Kafka in v1. |
+| Workflows | DBOS Transact (Python library, MIT, state in Postgres), decided 20 Nov 2026. Replaces Temporal. No Kafka in v1. |
 | Model gateway | LiteLLM, image pinned by digest. Never a floating tag. |
 | Fine-tuning | PEFT/LoRA on an Apache 2.0 or MIT base model only. |
 | Datastore | PostgreSQL 16+ (Neon Frankfurt for EU; local Docker for development). Object storage: S3-compatible (MinIO locally and on the EU server). |
@@ -71,6 +71,28 @@ The product requirements are in `docs/prd/` (read `PRD-00-exaktiv-core.md` first
 - **W-G4** Form submissions are stored in the EU region only and deleted after 6 months. Unit tests for region and retention (EXW1).
 - **W-G5** The company name Valyrian Tech Pvt Ltd stands once, in the controller sentence of the privacy notice, and nowhere else on the site (no footer, no schema.org `legalName`, no `llms.txt` line). No person is named. The build fails on any other mention (`check_company_name`). Changed 19 Nov 2026 (user decision); EXW4 adds the legal notice.
 
+## Legacy Analyser guardrails (PRD-L §11)
+
+PRD-L §11 is the source. These rows copy it; `tests/guardrails/test_exl0_legacy_guardrails.py` fails if they differ. Source of record additions: PRD-L §12. Decisions and accepted risks: `docs/decisions/EXL0-record.md`.
+
+| ID | Guardrail | How to check |
+|---|---|---|
+| L-G1 | **No finding without a verified code span.** Every finding cites path, lines, commit and span hash, and passes V1 to V6. Else it is dropped or becomes a gap. | Tests: invented path, line past the end of the file, changed text under the span, invented identifier: nothing is stored |
+| L-G2 | **The code is the source of truth.** Comments, documents, client answers and model memory are supporting evidence only. A finding with only such evidence is never "confirmed". | Test: a comment that contradicts the code gives "inferred" at best |
+| L-G3 | **Labels come from rules, not from the model.** The model's own certainty does not set confirmed, inferred or gap. | Test: model output that says "certain" with one pass and no graph support gives "inferred" |
+| L-G4 | **Client code stays private and in region.** No client code in logs, metrics, eval sets, prompts for another tenant, CLI or MCP results, or training. Model calls only on the tenant's region route (G7). | Log-scan test with a planted code marker; router test; CLI and MCP result test; no eval set reads tenant data |
+| L-G5 | **Read-only and sandboxed.** The analyser never writes to the client's repository. A build for the SCIP index runs in a throw-away container with no network, no secrets and resource limits. | Test: a build script that tries a network call fails; the container has no secret variables |
+| L-G6 | **Deletion on time.** Snapshot, index and findings are deleted at the end of the retention period, with a deletion record. | Unit test for the retention job, as in W-G4 |
+| L-G7 | **Clean room.** No code, prompts, templates, test data or methods from any current or past employer of the founders. No client code from past employers (G8). | Each fixture has a `SOURCE.md`. Pre-commit term check with a list kept outside the repository |
+| L-G8 | **Human approval before anything leaves.** A report goes to the client only after a named reviewer approves it. No change to the client's code without the client's approval (G13). | No export path without an approval record |
+| L-G9 | **No precision claim without its numbers.** Every precision figure in a report, on the website or in sales material states the sample size, the method and the 95% confidence interval. | Report renderer test: a precision value without these fields fails the build |
+| L-G10 | **Agents propose, people accept.** No API, MCP or CLI path accepts a finding, changes a label, re-accepts a changed `critical` finding or releases a report. | Test: every write tool creates a review task only |
+| L-G11 | **Writes to the client's systems need a standing approval.** A pull-request status check, a comment or a specification pull request needs a recorded approval from the client for that repository. | No outbound call to a git host without an approval record (G13) |
+| L-G12 | **Lean agent access.** All MCP tool definitions together cost 2,000 tokens or less; a typical tool result 1,500 tokens or less; the skill file 800 tokens or less. | Test counts tokens of the definitions, the skill file and recorded typical results; the build fails above the budget |
+| L-G13 | **Qualified routes, or a visible label.** A report uses precision figures only from qualified routes, or from the tenant's own review sample for an unqualified route. Every finding and report names its route and its qualified status. | Test: a run on an unqualified route renders the label and uses the tenant sample only |
+| L-G14 | **Independent cross-check.** The S5 cross-check route uses a different provider from the S4 route. | Test: same provider for S4 and S5 is refused at configuration and at run start |
+| L-G15 | **Client keys are secrets.** Stored encrypted per tenant, write-only in the UI, never in logs, metrics, events or prompts, never used for another tenant, never replaced by an Exaktiv key without the client choosing managed models. | Log-scan test with a planted key; tenant isolation test on the key vault; no-fallback test |
+
 ## Single source of record per field
 
 | Data | Authoritative source | Cross-check |
@@ -97,4 +119,4 @@ Use the Exaktiv brand package in `brand/` as the only source of truth. Read `bra
 
 ## Quality bar for high-stakes work
 
-These phases need an independent subagent review before "done": EXK2 (region), EXK3 (G1), EXK4 (G3/G4), EXK5 (G2), EXK9-p2 (G10), EXK10 (G5), EXK11 (G6), EXC4b (A-G4), EXC5 (A-G3), EXC9, EXP5 (B-G3), EXW1 (W-G4), EXW3 (W-G1, W-G2, W-G3).
+These phases need an independent subagent review before "done": EXK2 (region), EXK3 (G1), EXK4 (G3/G4), EXK5 (G2), EXK9-p2 (G10), EXK10 (G5), EXK11 (G6), EXC4b (A-G4), EXC5 (A-G3), EXC9, EXP5 (B-G3), EXW1 (W-G4), EXW3 (W-G1, W-G2, W-G3), EXL4 (L-G1, L-G2, L-G3), EXL10 (L-G4, L-G5, client environment), EXL14 (L-G13, L-G14, L-G15).

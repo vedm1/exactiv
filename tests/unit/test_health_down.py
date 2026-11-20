@@ -14,7 +14,6 @@ def dead_settings() -> Settings:
         minio_endpoint="http://127.0.0.1:1",
         minio_access_key="ak-sentinel",  # type: ignore[arg-type]
         minio_secret_key="sk-sentinel",  # type: ignore[arg-type]
-        temporal_address="127.0.0.1:1",
     )
 
 
@@ -28,6 +27,6 @@ async def test_health_reports_down() -> None:
         app.dependency_overrides.clear()
     assert response.status_code == 503
     body = response.json()
-    assert body["postgres"] == body["minio"] == body["temporal"] == "down"
+    assert body["postgres"] == body["minio"] == body["dbos"] == "down"
     for leak in (PASSWORD, "sk-sentinel", "ak-sentinel", "127.0.0.1"):
         assert leak not in response.text

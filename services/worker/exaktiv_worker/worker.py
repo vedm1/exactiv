@@ -1,26 +1,24 @@
 """Worker entry point: `uv run python -m exaktiv_worker.worker`."""
 
-import asyncio
-from collections.abc import Callable, Sequence
-from typing import Any
+import signal
+import threading
 
+from dbos import DBOS
 from exaktiv_core.settings import get_settings
-from temporalio.client import Client
-from temporalio.worker import Worker
 
-from exaktiv_worker.smoke import SmokeWorkflow, write_object, write_row
-
-WORKFLOWS: Sequence[type] = [SmokeWorkflow]
-ACTIVITIES: Sequence[Callable[..., Any]] = [write_row, write_object]
+from exaktiv_worker import smoke  # noqa: F401  (registers the workflows)
+from exaktiv_worker.dbos_app import dbos_config
 
 
-async def main() -> None:
-    s = get_settings()
-    client = await Client.connect(s.temporal_address, namespace=s.temporal_namespace)
-    await Worker(
-        client, task_queue=s.temporal_task_queue, workflows=WORKFLOWS, activities=ACTIVITIES
-    ).run()
+def main() -> None:
+    DBOS(config=dbos_config(get_settings()))
+    DBOS.launch()
+    stop = threading.Event()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda *_: stop.set())
+    stop.wait()
+    DBOS.destroy()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

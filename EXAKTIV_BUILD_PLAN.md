@@ -8,9 +8,14 @@ Capacity: two founders at about 20 hours per week each. Keep each phase to one s
 | Decision | Result | Replaces in PRD |
 |---|---|---|
 | Phase codes | Three prefixes: EXK, EXC, EXP | — |
-| Backend language | Python 3.12 only (FastAPI, Temporal Python SDK) | Kotlin / Spring Boot (PRD-00 §8) |
+| Backend language | Python 3.12 only (FastAPI, DBOS Transact) | Kotlin / Spring Boot (PRD-00 §8) |
 | Repository | Monorepo | — |
-| Workflows | Temporal, no Kafka in v1 | — (confirmed) |
+| Workflows | Temporal, no Kafka in v1 (superseded 20 Nov 2026: DBOS Transact) | — (confirmed) |
+| Workflows (20 Nov 2026) | DBOS Transact (MIT library, workflow state in the same Postgres). No Temporal server. Reason: one founder, small server, Postgres already in place. Move the EXK0 smoke workflow and `services/worker` before EXK1 | Temporal (this log, 4 Nov 2026) |
+| Legacy Analyser BYOK (20 Nov 2026) | Client admins enter their own provider keys and choose a qualified model route per model stage (S3, S4, S5 cross-check). Model cost is not part of the Exaktiv price; managed models as an add-on. Phase EXL14 | — |
+| Organisations (20 Nov 2026) | One client organisation holds several isolated tenants (G6 inside the organisation), each with its own region. Organisation table in EXK1, key scopes in EXK11 | Tenant only (PRD-00) |
+| Self-serve (20 Nov 2026) | Public self-serve sign-up deferred. The team sets up each organisation and engagement; client admins then manage tenants, keys, routes and reviewers | — |
+| Legacy Analyser (20 Nov 2026) | Third product track, prefix EXL, PRD `docs/prd/PRD-L-exaktiv-legacy-analyser.md` (approved 20 Nov 2026). Employment risk accepted by the user (19 Nov 2026). Analyser server up to 15 dollars per month accepted | — |
 | UI | React + TypeScript, Exaktiv brand package (`brand/`) | Personal Design System (PRD-00 §8) |
 | Design system (18 Nov 2026) | Exaktiv identity v1.0: Leader mark, Proof palette (Paper, Ink, Cobalt, Vermilion, Marker), Workbench type (Young Serif, Instrument Sans, Gelasio italic), no monospace. Phases EXD1 to EXD5. | Ved Design System v4 tokens (PRD-W §9), Personal Design System |
 | Base model licence | Apache 2.0 or MIT only | — (confirmed) |
@@ -43,14 +48,23 @@ EXC1 and EXP1 are configuration only, so they can start after EXK4. Extraction p
 ### Hosting phases
 EXK0b (EU) gates EXP6, because the free-fill test uses prospect data. EXK0c (India) gates EXC9, because real medical records must stay in India (A-G2). The Claims PoC uses synthetic data only (A-G5), so it runs locally until EXC9.
 
+### EXK0-dbos → EXK1: one workflow engine
+EXK0 shipped a Temporal smoke workflow. EXK0-dbos (done 20 Nov 2026) replaced it with DBOS before EXK1, so that EXK1 adds no Temporal code that must be removed later.
+
+### Legacy track: EXL0 → EXL1 → EXL2, then the core slices, then EXL3 to EXL7-p1
+EXL0 to EXL2 need no core phase, so they can start now and give a private, labelled sample. EXL3 needs EXK1 (snapshots, event log). EXL4 needs EXK3 and EXK4 (value contract and validation), because the verifier is the code form of G1 and G4. EXL5 needs EXK2 (gateway, region check) and EXK5. EXL6 needs EXK6 and EXK6-ui. If the order is reversed, model statements get stored before the verifier exists, and every finding from that time is untrusted.
+
+### EXL8 → EXL13, EXL14
+Continuous mode and client model routes both need measured numbers. EXL8 gives the precision, the cost per 1,000 lines and the first qualified route catalogue.
+
 ### EXD5 / EXW1 → EXW2 → EXW3: website order
 EXD5 builds the pages and EXW1 builds the form service. EXW2 deploys both on the EXK0b server, so EXK0b must be complete first. EXW3 is the launch gate: the site stays behind the staging password until every claim has evidence and the lawyer review is recorded. If the site goes public first, an unsupported claim can damage trust at the first security review.
 
 ## Risks by Phase
 
 ### EXK0b / EXK0c
-- **Risk**: The $10 limit per region is too small for Postgres + Temporal + MinIO + API on one server (about 4 GB RAM is necessary).
-- **Mitigation**: Measure RAM in EXK0 with docker stats. Use Temporal with the Postgres backend (no separate Cassandra or Elasticsearch). Record the real cost in the phase summary.
+- **Risk**: The $10 limit per region is too small for Postgres + MinIO + API + worker on one server (about 4 GB RAM is necessary).
+- **Mitigation**: Measure RAM in EXK0 with docker stats. DBOS keeps workflow state in the existing Postgres, so no separate workflow server runs. Record the real cost in the phase summary.
 
 ### EXK2
 - **Risk**: Data leaves the region through a router configuration mistake.
@@ -105,6 +119,34 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 - **Risk**: The site describes services that overlap with a team member's current employer.
 - **Mitigation**: The employment contract check is an EXW3 completion criterion.
 
+### EXL4
+- **Risk**: The verifier passes a statement whose meaning is wrong (valid citation, wrong rule).
+- **Mitigation**: Tiered human review, published precision with sample size and interval (L-G9), monthly baseline.
+
+### EXL3
+- **Risk**: A client build script runs hostile code during the SCIP build.
+- **Mitigation**: L-G5 sandbox: throw-away container, no network, no secrets, resource limits.
+- **Risk**: The build does not compile (old JDK, Ant). No SCIP index.
+- **Mitigation**: Tree-sitter fallback for every file; calls from the fallback labelled "inferred".
+
+### EXL6 / EXL7-p1
+- **Risk**: Too many findings for one reviewer in a 3 to 4 week Assess.
+- **Mitigation**: Tiered review; scope by module; review hours measured in EXL8.
+
+### EXL12
+- **Risk**: The client's own agent sends code to a model outside the region.
+- **Mitigation**: CLI and MCP results hold no code; the security pack states the boundary; EXL10 for strict clients.
+
+### EXL13
+- **Risk**: Automatic re-confirm hides a real change.
+- **Mitigation**: Only `sampled` kinds re-confirm automatically; critical kinds always go to a person (L-G10).
+
+### EXL14
+- **Risk**: A client chooses a weak or cheap model and blames the analyser for low precision.
+- **Mitigation**: Qualified catalogue with measured precision; unqualified routes labelled in every report (L-G13).
+- **Risk**: A client key leaks through logs or support.
+- **Mitigation**: L-G15: write-only, encrypted per tenant, log-scan test.
+
 ### All phases
 - **Risk**: Two founders at 20 hours per week each make the build slow.
 - **Mitigation**: One small PR per phase. Build the core once for both products.
@@ -119,7 +161,8 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 | Neon (Frankfurt): sign the DPA, get the sub-processor list, add Neon to the privacy notice recipients (PRD-W §8.3); state the plan and its cost against the $10 limit | EXK0b, EXW3 | ✅ Done 19 Nov 2026 (user). Record the plan and cost in `deploy/server/README.md` |
 | Pooled Neon host: probed through a local PgBouncer 1.26.1 on 18 Nov 2026, then against the real Neon pooled URL on 19 Nov 2026: connect with TLS `require`, `alembic upgrade head` (revision `0001`, tables, indexes, topic check constraint, 6-month default), the rate limit (6th refused, exactly 5 of 20 concurrent accepted). Probe rows removed. The tables stay at head | EXK0b close | ✅ Done 19 Nov 2026 |
 | Doppler workplace region and DPA (secrets only, no customer data) | EXK0b | ✅ Done 19 Nov 2026 (user): workplace region EU, DPA confirmed |
-| Temporal database: Neon (extra compute cost, 24/7 polling) or a small local Postgres with a volume and a backup | Temporal phase | 🔲 Parked by the user until that phase's spec |
+| Temporal database: Neon (extra compute cost, 24/7 polling) or a small local Postgres with a volume and a backup | Temporal phase | ✅ Closed 20 Nov 2026: DBOS replaces Temporal; workflow state lives in the existing Postgres |
+| Move EXK0 from Temporal to DBOS: remove Temporal and Temporal UI from the compose stack, port `SmokeWorkflow` to DBOS, update CI and `PHASES.md` EXK0 summary | EXK1 | ✅ Superseded 20 Nov 2026: now phase EXK0-dbos in `PHASES.md` (EXK1 depends on it) |
 | CircleCI context `exaktiv_deploy` restricted to `main`; "pass secrets to forked PRs" off; `main` protected in GitHub | EXK0b close | ✅ Done 19 Nov 2026 (user) |
 | EXK0b live checks: MinIO starts with `user: 65532` on a fresh named volume on the host; first CircleCI deploy; Neon connection with `POSTGRES_SSL=true` | EXK0b close | ✅ Done 19 Nov 2026 (MinIO healthy on 127.0.0.1:9000, deploy of `7ebe52a`; Neon pooled live check below) |
 | Neon restore test: make a Neon branch from a point in time, read one known row, delete the branch, record the date in `deploy/server/README.md` | EXW3 | 🔲 Open. Moved from EXK0b on 19 Nov 2026 (user: not needed yet). Not EXW2: staging holds test data only. Needed before the site goes public, when real enquiries arrive **EXW3**: steps in `deploy/server/README.md`. The user runs them before `SITE_MODE=live`. **19 Nov 2026: skipped, risk accepted by the user** (launch record item `neon-restore-test` is `accepted`). |
@@ -160,3 +203,11 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 | Lawyer review of the privacy notice (PRD-W §8.3) | EXW3 | 🔲 Open **EXW3 19 Nov 2026**: the user says the notice is reviewed. PRD-W 8.3 asks for a data protection lawyer: the user confirms who reviewed it. |
 | Employment contract check before the public launch | EXW3 | 🔲 Open **EXW3 19 Nov 2026**: risk accepted by the user. The site names no person, and the company name stands on one privacy-notice line only. |
 | First client contract close (trigger for the legal notice) | EXW4 | 🔲 Open |
+| Earlier LangGraph legacy-analyser build: location, and whether it is personal work made outside employment. Decided inside EXL0 | EXL1 | ✅ Decided 20 Nov 2026 (EXL0): start clean, no earlier analyser code. See `docs/decisions/EXL0-record.md` |
+| EU model routes for the analyser (S3, S4, S5 cross-check on different providers), data terms, region allowlist | EXL2, EXL5, EXL14 | 🔲 Open. Proposal: Claude through Bedrock EU and Mistral EU with zero data retention |
+| Key vault for client provider keys: encrypted Postgres columns or OpenBao | EXL14 | 🔲 Open |
+| Billing unit for the analyser under G5 | EXK10, pricing | 🔲 Open. Proposal: lines under analysis per month |
+| Claim `findings-sourced` for the EXW3 launch: EXL7-p1 passes first, or the claim leaves the launch pages | EXW3 | 🔲 Open |
+| Analyser server, up to 15 dollars per month in the EU | EXL3 | ✅ Accepted by the user 19 Nov 2026 |
+| Default retention of client code after handover | EXL7-p2 | 🔲 Open. Proposal: 30 days, per contract |
+| Code viewer without monospace (brand rule) | EXL6 | 🔲 Open. Test readability; ask for an exception if it fails |

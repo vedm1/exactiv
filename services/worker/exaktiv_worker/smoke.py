@@ -1,18 +1,14 @@
-"""Smoke workflow: one row in Postgres and one object in MinIO."""
+"""Smoke workflow: one row in Postgres and one object in MinIO (DBOS)."""
 
 import asyncio
-from dataclasses import dataclass
-from datetime import timedelta
+from dataclasses import asdict, dataclass
 
-from temporalio import activity, workflow
+import asyncpg  # type: ignore[import-untyped]
+from dbos import DBOS
+from exaktiv_core.settings import Settings, get_settings
+from exaktiv_core.storage import ensure_bucket, s3_client
 
-# Activity-only imports (database, S3) must not load inside the workflow sandbox.
-with workflow.unsafe.imports_passed_through():
-    import asyncpg  # type: ignore[import-untyped]
-    from exaktiv_core.settings import get_settings
-    from exaktiv_core.storage import ensure_bucket, s3_client
-
-# Throwaway table. EXK1 adds Alembic and drops it.
+# Throwaway table. EXK1 drops it.
 CREATE_SQL = (
     "CREATE TABLE IF NOT EXISTS smoke_runs "
     "(id text PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now())"
@@ -26,8 +22,18 @@ class SmokeResult:
     row_written: bool
     object_key: str
 
+    def to_dict(self) -> dict[str, object]:
+        # IDs and keys only. No personal data in workflow output (G11).
+        return asdict(self)
 
-@activity.defn
+
+def put_smoke_object(s: Settings, key: str) -> None:
+    client = s3_client(s)
+    ensure_bucket(client, s.minio_bucket)
+    client.put_object(Bucket=s.minio_bucket, Key=key, Body=b"exaktiv-smoke")
+
+
+@DBOS.step(retries_allowed=True, max_attempts=3, interval_seconds=0.1)
 async def write_row(run_id: str) -> bool:
     s = get_settings()
     conn = await asyncpg.connect(
@@ -46,25 +52,21 @@ async def write_row(run_id: str) -> bool:
         await conn.close()
 
 
-@activity.defn
+@DBOS.step(retries_allowed=True, max_attempts=3, interval_seconds=0.1)
 async def write_object(run_id: str) -> str:
     s = get_settings()
-    client = s3_client(s)
     key = f"smoke/{run_id}.txt"
-
-    def put() -> None:
-        ensure_bucket(client, s.minio_bucket)
-        client.put_object(Bucket=s.minio_bucket, Key=key, Body=b"exaktiv-smoke")
-
-    await asyncio.to_thread(put)
+    await asyncio.to_thread(put_smoke_object, s, key)
     return key
 
 
-@workflow.defn
-class SmokeWorkflow:
-    @workflow.run
-    async def run(self, run_id: str) -> SmokeResult:
-        timeout = timedelta(seconds=30)
-        row = await workflow.execute_activity(write_row, run_id, start_to_close_timeout=timeout)
-        key = await workflow.execute_activity(write_object, run_id, start_to_close_timeout=timeout)
-        return SmokeResult(run_id=run_id, row_written=row, object_key=key)
+@DBOS.workflow()
+async def smoke_workflow(run_id: str) -> dict[str, object]:
+    row = await write_row(run_id)
+    key = await write_object(run_id)
+    return SmokeResult(run_id=run_id, row_written=row, object_key=key).to_dict()
+
+
+async def run_smoke_workflow(run_id: str) -> SmokeResult:
+    """Run the workflow and wait. Set the workflow ID with `SetWorkflowID` for idempotency."""
+    return SmokeResult(**await smoke_workflow(run_id))  # type: ignore[arg-type]

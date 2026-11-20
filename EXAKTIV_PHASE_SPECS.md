@@ -887,3 +887,125 @@ Built as ONE phase (the user's decision), repository side. **Not closed**: the h
 **Objective**: Add the PRD-W phase 2 items.
 **Prerequisites**: EXW3 ✅; open item "first client contract close".
 **Rough scope**: legal notice (Impressum) under § 5 DDG for Valyrian Tech Pvt Ltd (legal form, registered address, authorised representatives, register entry); cookie-free analytics hosted in the EU; privacy notice update for the analytics.
+
+## EXK0-dbos — Move workflows from Temporal to DBOS
+
+**Objective**: Replace Temporal with DBOS Transact before EXK1.
+**Prerequisites**: EXK0 ✅. Decision of 20 Nov 2026 (build plan decisions log).
+**Rough scope**: remove Temporal and Temporal UI from `docker-compose.yml`; add `dbos` to the worker package (licence check, G12); port `SmokeWorkflow` (row + object) to a DBOS workflow with steps; DBOS system tables in Postgres (schema to decide); update CI integration job, `CLAUDE.md` stack row (done 20 Nov 2026), EXK0 summary.
+**Known unknowns**: DBOS with the Neon pooled host (probe); DBOS schema name and migration interplay with Alembic.
+
+**Implementation notes (20 Nov 2026, EXK0-dbos done)**
+- Decisions: schema `dbos` in the same database (Alembic never touches it); `/health` key `dbos`.
+- DBOS 3.6.0 takes a session-level advisory lock for migration and uses LISTEN/NOTIFY. Both fail behind PgBouncer transaction mode. DBOS therefore uses the direct host: setting `DBOS_DATABASE_URL`; a pooled host without it raises an error (`Settings.dbos_system_url`).
+- The default DBOS serializer is pickle. `dbos_config` sets `DBOSPortableJSONSerializer`, so workflows return plain dicts (`SmokeResult.to_dict`, IDs only, G11).
+- No `conductor_key`, `enable_otlp` false (G7).
+- `/health` reports `dbos` ok when `dbos.dbos_migrations` exists. That table appears after the first worker launch, so the integration test uses the `dbos_runtime` fixture (`tests/conftest.py`).
+- psycopg is LGPL-3.0: exception in `config/licence_exceptions.yaml`.
+- Not done: probe against Neon (direct host and pooled host). Needs user credentials. Record the result here.
+
+## EXL — Legacy Analyser track (shared)
+
+Source: `docs/prd/PRD-L-exaktiv-legacy-analyser.md` (v0.4, approved 20 Nov 2026). Guardrails L-G1 to L-G15 (PRD-L §11). Each EXL spec refers to the PRD sections and does not restate them.
+
+## EXL0 — Legacy Analyser scope gate
+
+**Objective**: Put the guardrails and decisions in place before any analyser code.
+**Prerequisites**: none.
+**Rough scope**: record the accepted employment risk; add L-G1 to L-G15 to `CLAUDE.md`; add EXL4, EXL10, EXL14 to the high-stakes list; decide on earlier analyser code; record corpus licences.
+
+### Implementation notes (EXL0, 20 Nov 2026)
+
+- Decision: start clean. No earlier analyser code is reused. Record: `docs/decisions/EXL0-record.md`.
+- `CLAUDE.md` copies the 15 rows of PRD-L §11. `tests/guardrails/test_exl0_legacy_guardrails.py` compares them to the PRD text, so a change in one place without the other fails the test.
+- High-stakes list now has EXL4, EXL10 and EXL14.
+- Corpus licences: Spring PetClinic (commit `500158f`) and Apache OFBiz (commit `9e79def`) are Apache-2.0, upstream `LICENSE` read. OFBiz `NOTICE` must travel with the subset (EXL1). The large public code base and the C#/C++ project are not chosen; each gets a licence check before first use.
+- `scripts/check_licences.py` (G12) checks Python packages only. It does not read the Datasets table, so dataset rows are checked by the EXL0 test and by review.
+- Moved to EXL1: the L-G7 pre-commit term check (`scripts/check_clean_room.py`, term list kept outside the repository).
+
+## EXL1 — Legacy test corpus
+
+**Objective**: A corpus with an answer key for precision, recall and continuous mode.
+**Prerequisites**: EXL0 ✅.
+**Rough scope**: PRD-L §13. Synthetic repository and its commit series; answer key format; public sets with `SOURCE.md`. Also the L-G7 pre-commit term check (`scripts/check_clean_room.py`, list kept outside the repository). Keep the OFBiz `NOTICE` file with the subset.
+
+## EXL2 — Legacy probe
+
+**Objective**: Real numbers before the build: tokens per line, invalid-citation rate, precision on seeded rules.
+**Prerequisites**: EXL1 ✅; one EU model route available.
+**Rough scope**: time-boxed to 5 working days; probe code not merged; results into implementation notes here.
+
+## EXL3 — Snapshot ingest and code facts
+
+**Objective**: S0 to S2 (PRD-L §8.1) as DBOS workflows.
+**Prerequisites**: EXK1 ✅, EXL2 ✅.
+**Rough scope**: FR-LEG-ING, FR-LEG-FCT; code graph tables (§8.4); sandbox (L-G5).
+
+## EXL3-ui — Engagement, ingest and run screens
+
+**Objective**: Screens "Engagements" and "Ingest and runs" (PRD-L §9.1).
+**Prerequisites**: EXL3 ✅, EXD3 ✅.
+
+## EXL4 — Finding contract and verifier
+
+**Objective**: Finding record (§8.2), checks V1 to V8 and label rules (§8.3).
+**Prerequisites**: EXK3 ✅, EXK4 ✅, EXL3 ✅.
+**Rough scope**: L-G1, L-G2, L-G3 tests; re-anchor test; independent review.
+
+## EXL5 — Explain and extract
+
+**Objective**: S3 to S5 through the gateway with Exaktiv-managed routes.
+**Prerequisites**: EXK2 ✅, EXK5 ✅, EXL4 ✅.
+**Rough scope**: FR-LEG-EXT; prompts in versioned files; G3 grep; L-G4 log test.
+
+## EXL6 — Code-span review and tiers
+
+**Objective**: Review screen and tiered sampling (FR-LEG-REV).
+**Prerequisites**: EXK6 ✅, EXK6-ui ✅, EXL5 ✅.
+
+## EXL7-p1 — Specification reader and system map
+
+**Objective**: Reader, system map, explorer, gaps (§9.1). Demo gate (§14).
+**Prerequisites**: EXL6 ✅, EXD3 ✅.
+
+## EXL7-p2 — Reports, precision and evidence
+
+**Objective**: PDF report, precision statement, risk register, SBOM view, evidence pack, retention.
+**Prerequisites**: EXL7-p1 ✅, EXD4 ✅, EXK8 ✅.
+
+## EXL8 — Analyser evaluation and scale
+
+**Objective**: Assess-ready gate and scale gate (§14); first qualified route catalogue.
+**Prerequisites**: EXL7-p1 ✅, EXK7 ✅.
+
+## EXL9 — Pilot kit
+
+**Objective**: Characterisation tests from accepted findings, with a mutation check.
+**Prerequisites**: EXL7-p2 ✅.
+
+## EXL10 — Client-environment bundle
+
+**Objective**: Run the full analyser inside the client's network.
+**Prerequisites**: EXL5 ✅, EXL12 ✅.
+
+## EXL11 — Second language pack
+
+**Objective**: C# or C++ support for facts and verifier.
+**Prerequisites**: EXL5 ✅; language chosen after the first client call.
+
+## EXL12 — Agent access, CLI first
+
+**Objective**: CLI with skill file, then remote MCP (§9.2).
+**Prerequisites**: EXL7-p1 ✅, EXK11 ✅.
+**Rough scope**: five tools; `sync` and `check`; L-G10, L-G12 tests.
+
+## EXL13 — Continuous mode
+
+**Objective**: Keep the specification current per commit (§9.3).
+**Prerequisites**: EXL8 ✅, EXL12 ✅.
+
+## EXL14 — Client keys and model routes
+
+**Objective**: BYOK and model route per stage (§8.7), organisation defaults (§8.8).
+**Prerequisites**: EXL8 ✅, EXK9-p2 ✅, EXK11 ✅; open items "key vault" and "region allowlist".
+**Rough scope**: FR-LEG-KEY, FR-LEG-ORG; L-G13, L-G14, L-G15 tests; independent review.

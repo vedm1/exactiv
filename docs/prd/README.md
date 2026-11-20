@@ -52,7 +52,7 @@ Read the core PRD first. The product PRDs refer to it and do not repeat it.
 These are proposals. The PRDs mark each one as "Proposed".
 
 1. Stack split: Kotlin (Spring Boot) for services and workflows, Python (FastAPI) for the model service.
-2. Workflow engine: Temporal. Kafka is not in v1; add it when event volume needs it.
+2. Workflow engine: DBOS Transact (changed 20 Nov 2026; was Temporal). Kafka is not in v1; add it when event volume needs it.
 3. Cloud and regions: AWS Mumbai (ap-south-1) for Claims; AWS Frankfurt (eu-central-1) for Product Data.
 4. Default frontier model per region, and the open base model for fine-tuning (Apache 2.0 or MIT licence only).
 5. Reviewer UI framework: React + TypeScript, with the Exaktiv brand package (`brand/`). The Personal Design System is retired (18 Nov 2026).

@@ -1,3 +1,11 @@
 version: 1
 # Each exception: {package: name, licence: text, reason: text, approved_on: YYYY-MM-DD}
-exceptions: []
+exceptions:
+  - package: psycopg
+    licence: LGPL-3.0-only
+    reason: Required by DBOS Transact (MIT). Unmodified, used as a library through import. Not distributed. Recorded in LICENCES.md.
+    approved_on: 2026-11-20
+  - package: psycopg-binary
+    licence: LGPL-3.0-only
+    reason: Binary wheel of psycopg (same terms). Unmodified, used as a library.
+    approved_on: 2026-11-20
