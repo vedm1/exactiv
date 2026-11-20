@@ -1,0 +1,15 @@
+diff --git a/src/main/java/org/example/harbour/payment/RefundService.java b/src/main/java/org/example/harbour/payment/RefundService.java
+index d28eea9..af9a522 100644
+--- a/src/main/java/org/example/harbour/payment/RefundService.java
++++ b/src/main/java/org/example/harbour/payment/RefundService.java
+@@ -24,8 +24,8 @@ public class RefundService {
+         if (refundAmount.compareTo(originalPaid) > 0) {
+             throw new RefundRejectedException("refund " + refundAmount + " is more than the paid amount " + originalPaid);
+         }
+-        if (refundAmount.compareTo(new BigDecimal("500.00")) > 0 && !approved) {
+-            throw new RefundRejectedException("refund above 500.00 needs approval");
++        if (refundAmount.compareTo(new BigDecimal("250.00")) > 0 && !approved) {
++            throw new RefundRejectedException("refund above 250.00 needs approval");
+         }
+     }
+ 

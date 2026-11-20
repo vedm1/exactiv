@@ -1,0 +1,14 @@
+diff --git a/src/main/java/org/example/harbour/invoice/DueDateCalculator.java b/src/main/java/org/example/harbour/invoice/DueDateCalculator.java
+index f17263e..cba61a1 100644
+--- a/src/main/java/org/example/harbour/invoice/DueDateCalculator.java
++++ b/src/main/java/org/example/harbour/invoice/DueDateCalculator.java
+@@ -19,6 +19,9 @@ public class DueDateCalculator {
+         if (created != null && Dates.daysBetween(created, issueDate) < NEW_CUSTOMER_WINDOW_DAYS) {
+             days = NEW_CUSTOMER_TERMS_DAYS;
+         }
++        if (days > 45) {
++            days = 45;
++        }
+         return issueDate.plusDays(days);
+     }
+ 

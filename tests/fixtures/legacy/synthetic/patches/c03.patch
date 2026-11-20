@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/order/OrderStateMachine.java b/src/main/java/org/example/harbour/order/OrderStateMachine.java
+index 4e019d9..4d08bd1 100644
+--- a/src/main/java/org/example/harbour/order/OrderStateMachine.java
++++ b/src/main/java/org/example/harbour/order/OrderStateMachine.java
+@@ -40,7 +40,7 @@ public class OrderStateMachine {
+             return true;
+         }
+         if (to == OrderStatus.CANCELLED) {
+-            if (from == OrderStatus.NEW || from == OrderStatus.CONFIRMED || from == OrderStatus.PICKED) {
++            if (from == OrderStatus.NEW || from == OrderStatus.CONFIRMED) {
+                 return true;
+             }
+             return false;

@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/shipping/ShippingCalculator.java b/src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+index 83b79ec..7fa0fa4 100644
+--- a/src/main/java/org/example/harbour/shipping/ShippingCalculator.java
++++ b/src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+@@ -67,7 +67,7 @@ public class ShippingCalculator {
+             return new BigDecimal("7.90");
+         }
+         if (chargeableKg.compareTo(new BigDecimal("20")) <= 0) {
+-            return new BigDecimal("14.90");
++            return new BigDecimal("15.90");
+         }
+         BigDecimal over = chargeableKg.subtract(new BigDecimal("20")).setScale(0, RoundingMode.UP);
+         return new BigDecimal("14.90").add(over.multiply(new BigDecimal("0.90")));

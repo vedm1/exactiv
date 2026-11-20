@@ -2,7 +2,7 @@
 name = "exaktiv-core"
 version = "0.0.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pydantic>=2", "pydantic-settings", "asyncpg", "boto3", "psycopg[binary]"]
+dependencies = ["pydantic>=2", "pydantic-settings", "asyncpg", "boto3", "psycopg[binary]", "pyyaml"]
 
 [build-system]
 requires = ["hatchling"]

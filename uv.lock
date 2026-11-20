@@ -350,6 +350,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -359,6 +360,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic", specifier = ">=2" },
     { name = "pydantic-settings" },
+    { name = "pyyaml" },
 ]
 
 [[package]]

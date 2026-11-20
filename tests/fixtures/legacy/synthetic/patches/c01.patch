@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/pricing/PricingService.java b/src/main/java/org/example/harbour/pricing/PricingService.java
+index a5de6da..44aa5b1 100644
+--- a/src/main/java/org/example/harbour/pricing/PricingService.java
++++ b/src/main/java/org/example/harbour/pricing/PricingService.java
+@@ -26,7 +26,7 @@ public class PricingService {
+ 
+     private static final Logger LOG = Logger.getLogger(PricingService.class.getName());
+ 
+-    private static final BigDecimal MAX_DISCOUNT_SHARE = new BigDecimal("0.25");
++    private static final BigDecimal MAX_DISCOUNT_SHARE = new BigDecimal("0.20");
+     private static final BigDecimal PARTNER_RATE = new BigDecimal("0.10");
+     private static final String PARTNER_HELPER_KEY = "pricing.legacy.partner";
+ 

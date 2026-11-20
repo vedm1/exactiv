@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/order/OrderService.java b/src/main/java/org/example/harbour/order/OrderService.java
+index 93b1380..b13c41b 100644
+--- a/src/main/java/org/example/harbour/order/OrderService.java
++++ b/src/main/java/org/example/harbour/order/OrderService.java
+@@ -100,7 +100,7 @@ public class OrderService {
+         if (limit == null) {
+             return false;
+         }
+-        return exposure.compareTo(limit) <= 0;
++        return exposure.compareTo(limit) < 0;
+     }
+ 
+     /**

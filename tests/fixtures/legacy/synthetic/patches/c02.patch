@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/invoice/LateFeeCalculator.java b/src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+index e4b45dd..5fd12d3 100644
+--- a/src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
++++ b/src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+@@ -13,7 +13,7 @@ import org.example.harbour.util.Dates;
+ public class LateFeeCalculator {
+ 
+     private static final BigDecimal FEE_PERCENT_PER_PERIOD = new BigDecimal("1.5");
+-    private static final BigDecimal FEE_PERCENT_CEILING = new BigDecimal("15");
++    private static final BigDecimal FEE_PERCENT_CEILING = new BigDecimal("12");
+     private static final int PERIOD_DAYS = 30;
+ 
+     // Late fee: 2 percent of the invoice total for each started 14 days

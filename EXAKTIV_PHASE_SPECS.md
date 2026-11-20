@@ -929,6 +929,19 @@ Source: `docs/prd/PRD-L-exaktiv-legacy-analyser.md` (v0.4, approved 20 Nov 2026)
 **Prerequisites**: EXL0 ✅.
 **Rough scope**: PRD-L §13. Synthetic repository and its commit series; answer key format; public sets with `SOURCE.md`. Also the L-G7 pre-commit term check (`scripts/check_clean_room.py`, list kept outside the repository). Keep the OFBiz `NOTICE` file with the subset.
 
+### Implementation notes (EXL1, 20 Nov 2026)
+
+- **Synthetic repository** `tests/fixtures/legacy/synthetic/base/`: "harbour-billing", 6,592 Java lines, 14 packages, Maven `pom.xml` (no dependencies). Compiles with `javac --release 8` (JDK 24 prints "source value 8 is obsolete"; the test uses `-Xlint:-options`). `mvn` is not installed; the test needs `javac` only. Drafted in parts with AI help, then checked by an independent read-only review of every span, decoy and patch (no mismatch found).
+- **Counts.** The 5 ambiguous rules are on top of the 40 clear rules (45 key rows). 30 of the 40 clear rules have a critical kind. Kinds follow PRD-L §8 and are provisional: EXL4 owns `config/legacy/finding_kinds.yaml`.
+- **Answer key v1** (`answer_key.yaml`): spans (path relative to `base/`, 1-based lines, SHA-256) valid at `c00`. Span hash form: lines joined with LF, UTF-8, no final newline. EXL4 may adopt or replace it. A rule can have several spans (a constant plus a method). Labels: A01, A03, A04 `inferred`; A02, A05 `gap`. The reviewer notes that A05's arithmetic is clear and only the reason is missing, and that A02 could be `inferred` under L-G2. Kept as is; EXL8 may revisit when it scores labels.
+- **Commit series** (`commit_series.yaml` v1, `patches/c01..c13`): 10 changes (R03, R08, R14, R18, R25, R11, R32, R15, R34, R13; 8 critical kinds) and 3 move-only commits (comment block after the `package` line; they shift 5, 2 and 1 rules). Each step lists `changed`, `moved` and `expected_stale`. `exaktiv_core.legacy_corpus.spans_at()` replays them. `build_legacy_corpus.py` gives the same commit IDs on each run (fixed author, dates, no global git config).
+- **Tools not committed.** The spans were made by scratch helpers (anchor regex per rule, brace matching). The key and series are the artefacts; to change the Java base, edit the files, then recompute spans and hashes and rebuild the patches. The tests fail if any hash drifts.
+- **Public sets.** Short hashes in `LICENCES.md` resolve to full SHAs (recorded in `tests/fixtures/legacy/public/sets.yaml`): PetClinic `500158f7…`, OFBiz `9e79def3…`. A short SHA cannot be fetched from GitHub; the script needs the full SHA and refuses a short one. Real fetch done: PetClinic 4,297 Java lines; OFBiz subset (`applications/order`, `product`, `accounting`, `party`, `workeffort`) 99,339 Java lines, `LICENSE` and `NOTICE` copied. Nothing from them is in git (`.cache/` is ignored). The spec's separate `subset.yaml` became the `include` list in `sets.yaml`.
+- **G8 checker**: a row `dir/**` covers a subtree and needs a non-empty Origin. Per-folder `SOURCE.md` files hold the narrative; the rows are in `tests/fixtures/SOURCE.md`.
+- **Dependency**: `pyyaml` (MIT) moved into `libs/core` for the loader; the licence check passes.
+- **L-G7**: `scripts/check_clean_room.py` and hook `clean-room`. With `EXAKTIV_CLEAN_ROOM_TERMS` unset the hook exits 2 and blocks commits on a machine without the list; CI uses `--allow-missing`. No CI workflow exists in the repository yet, so the CI call is open (add it when CI is set up). A file name that matches a term is printed as `[name hidden]`.
+- **Not done**: the term list itself (private, user-owned); a CI call for the term check; Maven build of the corpus (EXL3 decides the SCIP build path).
+
 ## EXL2 — Legacy probe
 
 **Objective**: Real numbers before the build: tokens per line, invalid-citation rate, precision on seeded rules.

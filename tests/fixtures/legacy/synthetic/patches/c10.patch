@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/order/OrderValidator.java b/src/main/java/org/example/harbour/order/OrderValidator.java
+index 5544329..e1f17b0 100644
+--- a/src/main/java/org/example/harbour/order/OrderValidator.java
++++ b/src/main/java/org/example/harbour/order/OrderValidator.java
+@@ -74,7 +74,7 @@ public class OrderValidator {
+         for (int i = 0; i < lines.size(); i++) {
+             OrderLine line = lines.get(i);
+             int qty = line.getQuantity();
+-            if (qty < 1 || qty > 9999) {
++            if (qty < 1 || qty > 999) {
+                 throw new OrderException("line " + (i + 1) + " has a bad quantity: " + qty, "BAD_QUANTITY");
+             }
+         }

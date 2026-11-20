@@ -11,5 +11,5 @@ This record names no person and no company (W-G1, W-G5, L-G7).
 
 ## Open for later phases
 
-- L-G7 pre-commit term check (`scripts/check_clean_room.py`, term list kept outside the repository): built in EXL1, the first phase that writes fixtures.
+- L-G7 pre-commit term check (`scripts/check_clean_room.py`, term list kept outside the repository): built in EXL1 (20 Nov 2026). The user keeps the list and sets `EXAKTIV_CLEAN_ROOM_TERMS`.
 - Each guardrail L-G1 to L-G15 gets its named test in the phase that builds the guarded code.

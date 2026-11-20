@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/security/LoginService.java b/src/main/java/org/example/harbour/security/LoginService.java
+index c3c827d..31c2731 100644
+--- a/src/main/java/org/example/harbour/security/LoginService.java
++++ b/src/main/java/org/example/harbour/security/LoginService.java
+@@ -49,7 +49,7 @@ public class LoginService {
+     public void recordFailedLogin(User user, LocalDateTime now) {
+         int attempts = user.getFailedAttempts() + 1;
+         user.setFailedAttempts(attempts);
+-        if (attempts >= 5) {
++        if (attempts >= 3) {
+             user.setLockedUntil(now.plusMinutes(15));
+             user.setFailedAttempts(0);
+             LOG.warning("account locked after repeated failures: " + user.getName());

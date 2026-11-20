@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java b/src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java
+index d219290..7fbbf0f 100644
+--- a/src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java
++++ b/src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java
+@@ -20,7 +20,7 @@ public class EarlyPaymentDiscount {
+         }
+         long days = Dates.daysBetween(invoice.getIssueDate(), paidOn);
+         boolean hasLateFee = invoice.getLateFee() != null && invoice.getLateFee().signum() != 0;
+-        if (days <= 10 && !hasLateFee && !invoice.isDisputed()) {
++        if (days <= 14 && !hasLateFee && !invoice.isDisputed()) {
+             return invoice.getTotal().multiply(EARLY_RATE).setScale(2, RoundingMode.HALF_EVEN);
+         }
+         return BigDecimal.ZERO;

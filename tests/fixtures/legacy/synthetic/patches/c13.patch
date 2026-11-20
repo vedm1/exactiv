@@ -1,0 +1,17 @@
+diff --git a/src/main/java/org/example/harbour/invoice/InvoiceService.java b/src/main/java/org/example/harbour/invoice/InvoiceService.java
+index 9394fd0..0dfb2ae 100644
+--- a/src/main/java/org/example/harbour/invoice/InvoiceService.java
++++ b/src/main/java/org/example/harbour/invoice/InvoiceService.java
+@@ -1,5 +1,12 @@
+ package org.example.harbour.invoice;
+ 
++// Maintenance notes:
++// - invoice numbers come from a database sequence;
++// - lines are never edited after ISSUED;
++// - the formatter output is parsed by the archive tool;
++// - the old season rebate is no longer offered;
++// - keep this class free of UI code.
++
+ import java.math.BigDecimal;
+ import java.time.LocalDate;
+ import java.util.ArrayList;

@@ -1,0 +1,17 @@
+diff --git a/src/main/java/org/example/harbour/pricing/PricingService.java b/src/main/java/org/example/harbour/pricing/PricingService.java
+index 44aa5b1..1544381 100644
+--- a/src/main/java/org/example/harbour/pricing/PricingService.java
++++ b/src/main/java/org/example/harbour/pricing/PricingService.java
+@@ -1,5 +1,12 @@
+ package org.example.harbour.pricing;
+ 
++// Maintenance notes (2019 audit):
++// - price lists are loaded once per day by the nightly job;
++// - discount helpers are kept apart on purpose, see the wiki page;
++// - do not call these methods from batch jobs without a customer;
++// - rounding is done per line, the invoice only adds lines up;
++// - open question: partner handling, ask the sales team.
++
+ import java.math.BigDecimal;
+ import java.util.ArrayList;
+ import java.util.Iterator;

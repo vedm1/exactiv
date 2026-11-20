@@ -1,0 +1,17 @@
+diff --git a/src/main/java/org/example/harbour/inventory/StockService.java b/src/main/java/org/example/harbour/inventory/StockService.java
+index c1ed9fe..585dd12 100644
+--- a/src/main/java/org/example/harbour/inventory/StockService.java
++++ b/src/main/java/org/example/harbour/inventory/StockService.java
+@@ -1,5 +1,12 @@
+ package org.example.harbour.inventory;
+ 
++// Maintenance notes:
++// - the stock tables are shared with the warehouse tool;
++// - version columns are bumped by the DAO only;
++// - reservations live in a separate table;
++// - the return flow was added late and is not covered by tests;
++// - keep the log format, the support team greps it.
++
+ import java.sql.Connection;
+ import java.sql.SQLException;
+ import java.time.LocalDateTime;

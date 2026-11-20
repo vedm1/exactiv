@@ -1,0 +1,24 @@
+# Public code bases for the legacy analyser corpus (EXL1). Test input only, never training data.
+# Nothing from these sets is stored in git: scripts/fetch_legacy_public_sets.py copies the
+# pinned commit into .cache/legacy-public/<set>/. Licence rows: LICENCES.md (Datasets).
+version: 1
+sets:
+  petclinic:
+    url: https://github.com/spring-projects/spring-petclinic.git
+    commit: 500158f732419217507c7656904b8e6aa1bcc0d6
+    licence: Apache-2.0
+    licence_files: [LICENSE.txt]
+    include: ["."]
+    java_lines: [3000, 6000]
+  ofbiz:
+    url: https://github.com/apache/ofbiz-framework.git
+    commit: 9e79def33340243bd123635b7a9df976c2b035fe
+    licence: Apache-2.0
+    licence_files: [LICENSE, NOTICE]   # NOTICE must travel with the subset
+    include:
+      - applications/order
+      - applications/product
+      - applications/accounting
+      - applications/party
+      - applications/workeffort
+    java_lines: [90000, 110000]

@@ -42,3 +42,9 @@ repos:
         language: system
         pass_filenames: false
         files: ^(site/|brand/|scripts/build_site.py)
+      - id: clean-room
+        name: clean-room term check (L-G7)
+        entry: uv run python scripts/check_clean_room.py --root .
+        language: system
+        types: [text]
+        require_serial: true

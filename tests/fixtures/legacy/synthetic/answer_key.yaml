@@ -1,0 +1,818 @@
+# Answer key for the synthetic repository (EXL1). Spans are valid at commit c00.
+# Span hash: SHA-256 over lines start..end, UTF-8, LF, no final newline.
+# Later commits: see commit_series.yaml.
+version: 1
+corpus: harbour-billing
+base_commit: c00
+rules:
+- id: R01
+  kind: calculation
+  critical: true
+  statement: 'Volume discount on a line''s gross amount: quantity 200 or more gives 20 percent, 50 or
+    more gives 12 percent, 10 or more gives 5 percent, less than 10 gives none. Only the highest step
+    applies.'
+  identifiers:
+  - volumeDiscount
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 97
+    end_line: 109
+    span_sha256: 437fe747e92b5c639954eb993ac258cc2be7bd6d1adae89e9a4b84ae54c701ae
+  expected_label: confirmed
+  ambiguity: none
+- id: R02
+  kind: calculation
+  critical: true
+  statement: 'Tier discount after the volume discount, multiplicative: GOLD 8 percent, SILVER 4 percent,
+    STANDARD none.'
+  identifiers:
+  - tierDiscount
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 111
+    end_line: 119
+    span_sha256: 11085a6ebc5ef82d90737b3ba98926641c3cca1defec606fb7b8df1a87fa45cd
+  expected_label: confirmed
+  ambiguity: none
+- id: R03
+  kind: business_rule
+  critical: true
+  statement: The total discount on a line is capped at 25 percent of the line's gross amount.
+  identifiers:
+  - MAX_DISCOUNT_SHARE
+  - capDiscount
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 29
+    end_line: 29
+    span_sha256: 83961860df7e8b65562fe0ee8f4ef2365aec0d7a21d164ab3a8677a194ecd8ce
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 121
+    end_line: 128
+    span_sha256: 57b7632f940f623c7cf8af1cd7c76aa830df59015db1765fdd5971ad95363957
+  expected_label: confirmed
+  ambiguity: none
+- id: R04
+  kind: calculation
+  critical: true
+  statement: Money is rounded to 2 decimals with HALF_EVEN at line level, never only at invoice level.
+  identifiers:
+  - roundLine
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/Money.java
+    start_line: 18
+    end_line: 23
+    span_sha256: 5bf57d8dbfb88047833627a5d43f682fda01dbc2626fa7be4c0a74b4b111b0f7
+  expected_label: confirmed
+  ambiguity: none
+- id: R05
+  kind: calculation
+  critical: true
+  statement: 'Tax rate by ship-to country: DE 19 percent, FR 20 percent, NL 21 percent; books (category
+    BOOKS) in DE use 7 percent.'
+  identifiers:
+  - rateFor
+  spans:
+  - path: src/main/java/org/example/harbour/tax/TaxService.java
+    start_line: 35
+    end_line: 53
+    span_sha256: 187a5a7df9f4c79e8b84a81b57ca81b42e00987b3f5d0a97a77c8d9f9e16d1f1
+  expected_label: confirmed
+  ambiguity: none
+- id: R06
+  kind: business_rule
+  critical: true
+  statement: 'Reverse charge: tax is zero when the customer has a VAT id and the ship-to country differs
+    from the seller country DE and is an EU country (use a fixed list of EU country codes in code).'
+  identifiers:
+  - EU_COUNTRY_CODES
+  - isReverseCharge
+  spans:
+  - path: src/main/java/org/example/harbour/tax/TaxService.java
+    start_line: 26
+    end_line: 26
+    span_sha256: 2612aa99efa2c69d4a9b79db778e0e969c32a6aca869670f704b526b6dab401a
+  - path: src/main/java/org/example/harbour/tax/TaxService.java
+    start_line: 55
+    end_line: 64
+    span_sha256: c0e10155bf3fa912322d61dbb67f63efe23390c829757c969e446680d388c4f9
+  expected_label: confirmed
+  ambiguity: none
+- id: R07
+  kind: calculation
+  critical: true
+  statement: Invoice total = net + tax - credit balance of the customer, and never below zero.
+  identifiers:
+  - computeTotal
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/InvoiceService.java
+    start_line: 87
+    end_line: 94
+    span_sha256: 28b362b36214b13d9df0b92519d1000b0967441047de8e19756d3c71b683b707
+  expected_label: confirmed
+  ambiguity: none
+- id: R08
+  kind: calculation
+  critical: true
+  statement: Late fee is 1.5 percent of the invoice total for each started 30 days after the due date,
+    capped at 15 percent.
+  identifiers:
+  - FEE_PERCENT_PER_PERIOD
+  - FEE_PERCENT_CEILING
+  - lateFee
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+    start_line: 15
+    end_line: 15
+    span_sha256: bd335a442eba5cb477a8cee9caea5cf26d2c00ea732c548dc4104798dbbf1053
+  - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+    start_line: 16
+    end_line: 16
+    span_sha256: 0352fbfb7883b9a15b437236f74c132ff3a599e62d5384f66fd122b150512ae2
+  - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+    start_line: 22
+    end_line: 33
+    span_sha256: 43a95908aba5dd19cd2291c9357d1b6282daf02ec620211b1fdfb40b7513a39b
+  expected_label: confirmed
+  ambiguity: none
+- id: R09
+  kind: state_transition
+  critical: true
+  statement: 'Invoice states: DRAFT to ISSUED; ISSUED to PAID, OVERDUE or CANCELLED; OVERDUE to PAID;
+    DRAFT to CANCELLED. PAID and CANCELLED are final.'
+  identifiers:
+  - isAllowed
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/InvoiceStateMachine.java
+    start_line: 14
+    end_line: 26
+    span_sha256: d60c08b50c183859361ef3f33957bb5c66c1a2a444b4b67bf35f8b187b4314af
+  expected_label: confirmed
+  ambiguity: none
+- id: R10
+  kind: validation
+  critical: false
+  statement: Invoice number format is `INV-` + 4-digit year + `-` + 6 digits (zero padded sequence); a
+    number is never reused.
+  identifiers:
+  - compile
+  - nextNumber
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/InvoiceNumberGenerator.java
+    start_line: 15
+    end_line: 15
+    span_sha256: a0bb3a567c389d98c24c198364e23fa46773652993dbc57985455d12e6539841
+  - path: src/main/java/org/example/harbour/invoice/InvoiceNumberGenerator.java
+    start_line: 23
+    end_line: 34
+    span_sha256: 008ff551796beef2bfecb3935a869a20cc3def9437ed4384b75e21e9f27a4665
+  expected_label: confirmed
+  ambiguity: none
+- id: R11
+  kind: business_rule
+  critical: true
+  statement: Due date = issue date + customer's payment terms days; a customer created less than 90 days
+    before the issue date always gets 14 days.
+  identifiers:
+  - dueDate
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/DueDateCalculator.java
+    start_line: 16
+    end_line: 23
+    span_sha256: 29ec34a0ad45d8094404a34a2cc95877d2273048f4af7783833349e9ffaf37eb
+  expected_label: confirmed
+  ambiguity: none
+- id: R12
+  kind: calculation
+  critical: true
+  statement: Currency conversion uses the stored rate for the day; if none, the last known rate if it
+    is at most 3 days old; otherwise the conversion is rejected with an exception.
+  identifiers:
+  - MAX_RATE_AGE_DAYS
+  - convert
+  spans:
+  - path: src/main/java/org/example/harbour/invoice/CurrencyService.java
+    start_line: 17
+    end_line: 17
+    span_sha256: 6687c79d3c5650bff4d65f857cbf37aba67fb053f20ba7a0825a16096fff6b0d
+  - path: src/main/java/org/example/harbour/invoice/CurrencyService.java
+    start_line: 25
+    end_line: 39
+    span_sha256: 52d2b6762ede73d29720fcb418074c14c7f7284074af160302dd7bb7ea13fb46
+  expected_label: confirmed
+  ambiguity: none
+- id: R13
+  kind: validation
+  critical: false
+  statement: An order has 1 to 100 lines; each line quantity is 1 to 9999.
+  identifiers:
+  - validateLines
+  spans:
+  - path: src/main/java/org/example/harbour/order/OrderValidator.java
+    start_line: 66
+    end_line: 81
+    span_sha256: 60b7b1a5a29f252375584870dc1dd9f8c3a026c6d7e27868134348cc557f376e
+  expected_label: confirmed
+  ambiguity: none
+- id: R14
+  kind: state_transition
+  critical: true
+  statement: 'Order states: NEW to CONFIRMED; CONFIRMED to PICKED; PICKED to SHIPPED; SHIPPED to DELIVERED;
+    cancel (to CANCELLED) is allowed only from NEW, CONFIRMED or PICKED.'
+  identifiers:
+  - isTransitionAllowed
+  spans:
+  - path: src/main/java/org/example/harbour/order/OrderStateMachine.java
+    start_line: 26
+    end_line: 49
+    span_sha256: d6ec36b7d62b9768734c9c9d6e52b9bef2f6f581cfcf084bb6c93e36775d64b3
+  expected_label: confirmed
+  ambiguity: none
+- id: R15
+  kind: business_rule
+  critical: true
+  statement: 'Confirming an order needs a credit check: the customer''s open invoice total plus the order
+    total must not exceed the credit limit.'
+  identifiers:
+  - creditCheckPasses
+  spans:
+  - path: src/main/java/org/example/harbour/order/OrderService.java
+    start_line: 92
+    end_line: 104
+    span_sha256: c00992577e81397df520215beda4fe82a34201406260edaff57fc14725fb4168
+  expected_label: confirmed
+  ambiguity: none
+- id: R16
+  kind: business_rule
+  critical: true
+  statement: If stock is lower than the quantity and the product is backorderable, the line is split into
+    an available part and a backorder part; if it is not backorderable the order is rejected.
+  identifiers:
+  - allocateLine
+  spans:
+  - path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 39
+    end_line: 53
+    span_sha256: 7abb0393cee09f9b3e96dd6875cf5852a96d6b4d065efb8ba2899d7112c960bc
+  expected_label: confirmed
+  ambiguity: none
+- id: R17
+  kind: calculation
+  critical: true
+  statement: Stock is reserved when an order is confirmed; a reservation of a prepayment order is released
+    after 48 hours without payment.
+  identifiers:
+  - reserveForOrder
+  - isReservationExpired
+  - releaseExpired
+  - PREPAYMENT_HOLD_HOURS
+  spans:
+  - path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 58
+    end_line: 93
+    span_sha256: ad71a4d9acf73602de7ff5f79d7c040923b866c7fa764d40beaa91daf5c87db8
+  - path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 98
+    end_line: 104
+    span_sha256: a425036cac9a05bc40eb71099332efc7b0083503db36b7678f57434c83598460
+  - path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 109
+    end_line: 132
+    span_sha256: 309cf8a58d7a0349f390f13b6df1674f3d6fa61d614c6c4245d3f0d773f56efb
+  - path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 27
+    end_line: 27
+    span_sha256: 7c5b4085277078936a7c7d16d4fdfa195d384344420a54bbf77b7f715f73374b
+  expected_label: confirmed
+  ambiguity: none
+- id: R18
+  kind: calculation
+  critical: true
+  statement: 'Shipping cost by chargeable weight: up to 1 kg 4.90; up to 5 kg 7.90; up to 20 kg 14.90;
+    above 20 kg 14.90 plus 0.90 for each started kg over 20. Free shipping for domestic (DE) orders with
+    a net total of 250.00 or more.'
+  identifiers:
+  - shippingCost
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+    start_line: 59
+    end_line: 74
+    span_sha256: 0dc2e2abb116e315a0d5b302960a306f29a5d444b31d3861a5662f3e7625a7f4
+  expected_label: confirmed
+  ambiguity: none
+- id: R19
+  kind: business_rule
+  critical: true
+  statement: Hazardous goods can only ship with carrier GROUND, never AIR or EXPRESS.
+  identifiers:
+  - checkCarrier
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/CarrierPolicy.java
+    start_line: 22
+    end_line: 26
+    span_sha256: 7de3db9127e7dc130a8ee6a307659cab1f13a4fb428a857b29f4c9eaf8207465
+  expected_label: confirmed
+  ambiguity: none
+- id: R20
+  kind: calculation
+  critical: true
+  statement: Volumetric weight = length x width x height in cm divided by 5000; the chargeable weight
+    is the greater of actual and volumetric weight.
+  identifiers:
+  - chargeableWeightKg
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+    start_line: 46
+    end_line: 53
+    span_sha256: d44d5818dab2f923289e1054962b7643dcdfe4be063bcd3d8ac5829c6f8f98d4
+  expected_label: confirmed
+  ambiguity: none
+- id: R21
+  kind: validation
+  critical: false
+  statement: 'Ship-to postal code format: DE 5 digits; NL 4 digits and 2 letters; FR 5 digits.'
+  identifiers:
+  - isValidPostalCode
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/AddressChecker.java
+    start_line: 19
+    end_line: 33
+    span_sha256: a240f4448c37900ca71a394e0e1f9dcf8e1108005ae0117a2e2c64b87b5ac4a9
+  expected_label: confirmed
+  ambiguity: none
+- id: R22
+  kind: business_rule
+  critical: true
+  statement: An order confirmed after 14:00 ships on the next business day; before 14:00 the same business
+    day.
+  identifiers:
+  - plannedShipDate
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/ShipDateCalculator.java
+    start_line: 20
+    end_line: 29
+    span_sha256: d7c3ca1ec5f4b4c7bb195cb954bdbd086bb1dde318807a7769f9a3239497a4c8
+  expected_label: confirmed
+  ambiguity: none
+- id: R23
+  kind: data_access
+  critical: false
+  statement: Stock updates use an optimistic lock on a version column and retry up to 3 times on a version
+    conflict.
+  identifiers:
+  - updateStockWithRetry
+  - MAX_VERSION_RETRIES
+  spans:
+  - path: src/main/java/org/example/harbour/inventory/StockDao.java
+    start_line: 47
+    end_line: 71
+    span_sha256: 50d60fa95e773d8995b965ae34ec3de7c16b3f87f974c3c3f6ae8c65914ed813
+  - path: src/main/java/org/example/harbour/inventory/StockDao.java
+    start_line: 21
+    end_line: 21
+    span_sha256: ccf0b5084e21335193fc791032563ee31f7cd9381d084c415f16afbc2af1b0e9
+  expected_label: confirmed
+  ambiguity: none
+- id: R24
+  kind: integration
+  critical: false
+  statement: A shipment notice is sent to the carrier by HTTP POST; on failure retry 3 times with waits
+    of 1, 2 and 4 seconds, then park the notice for manual handling.
+  identifiers:
+  - sendWithRetry
+  - postNotice
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/ShipmentNotifier.java
+    start_line: 20
+    end_line: 20
+    span_sha256: 28463b6fac40a3cd17a53095d34efb0f17913dcf684d7aa76f2b98a8f087f00f
+  - path: src/main/java/org/example/harbour/shipping/ShipmentNotifier.java
+    start_line: 33
+    end_line: 58
+    span_sha256: 930a0bef4f0691b387976c1f183ec967c0fe58ba66e23e1b45edf92ffe3f77f0
+  - path: src/main/java/org/example/harbour/shipping/ShipmentNotifier.java
+    start_line: 63
+    end_line: 83
+    span_sha256: 988a495a979183271ad09b8be19c64e127f3d24af56ccbe793b2da54845ffe28
+  expected_label: confirmed
+  ambiguity: none
+- id: R25
+  kind: security_control
+  critical: true
+  statement: A user is locked for 15 minutes after 5 failed login attempts.
+  identifiers:
+  - recordFailedLogin
+  spans:
+  - path: src/main/java/org/example/harbour/security/LoginService.java
+    start_line: 49
+    end_line: 57
+    span_sha256: 845e2ec3499a0065bd73d1623b3d752c5e9cdfef72ca25f509b91966ef052240
+  expected_label: confirmed
+  ambiguity: none
+- id: R26
+  kind: security_control
+  critical: true
+  statement: Only ROLE_FINANCE may cancel an issued invoice; only ROLE_ADMIN may change a credit limit.
+  identifiers:
+  - mayCancelInvoice
+  - mayChangeCreditLimit
+  spans:
+  - path: src/main/java/org/example/harbour/security/AccessPolicy.java
+    start_line: 13
+    end_line: 21
+    span_sha256: c775e1857506e225a59b1aee25487ec4a1cae90ca215dc898463a261485e83b9
+  - path: src/main/java/org/example/harbour/security/AccessPolicy.java
+    start_line: 23
+    end_line: 28
+    span_sha256: 4a8da3bd65f6ba09b1930fb2a92afcce1c5107d314b8c7fbe332b7264eada520
+  expected_label: confirmed
+  ambiguity: none
+- id: R27
+  kind: security_control
+  critical: true
+  statement: A credit limit change above 50,000 needs a second approver who is a different person than
+    the requester (four eyes).
+  identifiers:
+  - FOUR_EYES_ABOVE
+  - checkApproval
+  spans:
+  - path: src/main/java/org/example/harbour/security/CreditLimitApproval.java
+    start_line: 16
+    end_line: 16
+    span_sha256: 912c0e9cc9f76aca1488d2d09d6704eb8c26c6012e3051732522d1d2a6ac8bd9
+  - path: src/main/java/org/example/harbour/security/CreditLimitApproval.java
+    start_line: 24
+    end_line: 34
+    span_sha256: 3ce0903d2f533dfbc05193904c74006a0da0d687d25a6777cfa618107ce5b961
+  expected_label: confirmed
+  ambiguity: none
+- id: R28
+  kind: validation
+  critical: false
+  statement: 'VAT id format: DE + 9 digits; FR + 2 characters + 9 digits.'
+  identifiers:
+  - isValidVatId
+  spans:
+  - path: src/main/java/org/example/harbour/customer/VatIdValidator.java
+    start_line: 16
+    end_line: 28
+    span_sha256: 7a08fe46a229a12159ae495dfd6b72b5bb0a1feef08e832d59821320ba899637
+  expected_label: confirmed
+  ambiguity: none
+- id: R29
+  kind: business_rule
+  critical: true
+  statement: A customer becomes GOLD after 12 months of being a customer with a turnover of at least 20,000
+    in the last 12 months; GOLD drops to SILVER when the turnover of the last 12 months is below 10,000.
+  identifiers:
+  - evaluateTier
+  spans:
+  - path: src/main/java/org/example/harbour/customer/CustomerService.java
+    start_line: 79
+    end_line: 91
+    span_sha256: 0ff2ca21a1ba5f2246c9ffa947022d7e0885399a57037e516918bb77cf5a4e4f
+  expected_label: confirmed
+  ambiguity: none
+- id: R30
+  kind: state_transition
+  critical: true
+  statement: A customer goes from ACTIVE to BLOCKED when an invoice is overdue by more than 60 days; BLOCKED
+    goes back to ACTIVE only when all overdue invoices are paid.
+  identifiers:
+  - nextState
+  spans:
+  - path: src/main/java/org/example/harbour/customer/CustomerService.java
+    start_line: 96
+    end_line: 117
+    span_sha256: 4771e70c14bdd509fa17cf72cd51dd2064a459e0fc5fa261de736ac6b76203eb
+  expected_label: confirmed
+  ambiguity: none
+- id: R31
+  kind: business_rule
+  critical: true
+  statement: A payment is allocated to the oldest open invoice first; an overpayment becomes credit balance
+    of the customer.
+  identifiers:
+  - allocate
+  spans:
+  - path: src/main/java/org/example/harbour/payment/PaymentAllocator.java
+    start_line: 36
+    end_line: 55
+    span_sha256: 65ad8fcff95cf84f3ab73fe22ae45bc7014fbaede23366850c562027b5cbd446
+  expected_label: confirmed
+  ambiguity: none
+- id: R32
+  kind: calculation
+  critical: true
+  statement: Early-payment discount of 2 percent when paid within 10 days of the issue date, only if the
+    invoice has no late fee and is not disputed.
+  identifiers:
+  - discountFor
+  spans:
+  - path: src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java
+    start_line: 17
+    end_line: 27
+    span_sha256: cad2027900be65052cdc1230c34cd21f410db1901b45a3f830e66b98b6ccb9c5
+  expected_label: confirmed
+  ambiguity: none
+- id: R33
+  kind: validation
+  critical: false
+  statement: 'IBAN check: the length matches the country (DE 22, NL 18, FR 27) and the mod 97 check digit
+    rule holds.'
+  identifiers:
+  - isValidIban
+  spans:
+  - path: src/main/java/org/example/harbour/payment/IbanValidator.java
+    start_line: 11
+    end_line: 46
+    span_sha256: cac82d8a68681d71d3305e0bee8dc519e8c8abff5103329e90d0b504ad98899a
+  expected_label: confirmed
+  ambiguity: none
+- id: R34
+  kind: business_rule
+  critical: true
+  statement: A refund cannot exceed the original paid amount; a refund above 500.00 needs an approval
+    flag.
+  identifiers:
+  - checkRefund
+  spans:
+  - path: src/main/java/org/example/harbour/payment/RefundService.java
+    start_line: 20
+    end_line: 30
+    span_sha256: 9f0dc13609deb1723f500b62dce8f6ec35789009c3e39ff78e68020f9aa1a47c
+  expected_label: confirmed
+  ambiguity: none
+- id: R35
+  kind: data_access
+  critical: false
+  statement: Payment rows are never deleted; a cancellation inserts a reversal row that points to the
+    original.
+  identifiers:
+  - reverse
+  spans:
+  - path: src/main/java/org/example/harbour/payment/PaymentDao.java
+    start_line: 78
+    end_line: 94
+    span_sha256: 0ed206a109567be1b94f791de8139f80cb3464d12d64f612ba22ba8d49837ac4
+  expected_label: confirmed
+  ambiguity: none
+- id: R36
+  kind: integration
+  critical: false
+  statement: 'Bank statement import (CSV): a line is matched to an invoice by the invoice number found
+    in the reference text; unmatched lines go to a suspense list.'
+  identifiers:
+  - importStatement
+  spans:
+  - path: src/main/java/org/example/harbour/payment/BankStatementImporter.java
+    start_line: 26
+    end_line: 61
+    span_sha256: 9989b7c0f66c3432569bda57a29585440e15cca0ee5879e6877cfcdcf585ac40
+  expected_label: confirmed
+  ambiguity: none
+- id: R37
+  kind: validation
+  critical: false
+  statement: E-mail addresses are trimmed and lower-cased before they are stored and must be unique among
+    customers.
+  identifiers:
+  - assignEmail
+  spans:
+  - path: src/main/java/org/example/harbour/customer/CustomerService.java
+    start_line: 62
+    end_line: 74
+    span_sha256: 6581e1a5dec8fbebaf2d4b6af88a4e00ea1621d52584bdd9aaa3bfe3bdaada93
+  expected_label: confirmed
+  ambiguity: none
+- id: R38
+  kind: calculation
+  critical: true
+  statement: 'Monthly revenue report: sums net of invoices by issue date (not payment date), and excludes
+    DRAFT and CANCELLED invoices.'
+  identifiers:
+  - monthlyNet
+  spans:
+  - path: src/main/java/org/example/harbour/reporting/RevenueReport.java
+    start_line: 21
+    end_line: 39
+    span_sha256: 2d17e925c98278dd87e9ab119cd6eea0644de9dcbc47df43912f3975829307de
+  expected_label: confirmed
+  ambiguity: none
+- id: R39
+  kind: business_rule
+  critical: true
+  statement: Customer data is anonymised 10 years after the last invoice, never earlier.
+  identifiers:
+  - RETENTION_YEARS
+  - isDueForAnonymisation
+  spans:
+  - path: src/main/java/org/example/harbour/customer/CustomerAnonymizer.java
+    start_line: 19
+    end_line: 19
+    span_sha256: 9a11f3ebe096aa0113344b1a4074edb61ae0e9f6fe48e738b13234cc0537260b
+  - path: src/main/java/org/example/harbour/customer/CustomerAnonymizer.java
+    start_line: 32
+    end_line: 38
+    span_sha256: e66d62dd7c4d5e6c3887402186f058c8550363f40fadc0c50dc829d9cb4e8ce6
+  expected_label: confirmed
+  ambiguity: none
+- id: R40
+  kind: security_control
+  critical: true
+  statement: Every price list change writes an audit entry with the user, the old value and the new value.
+  identifiers:
+  - changePrice
+  spans:
+  - path: src/main/java/org/example/harbour/audit/PriceListService.java
+    start_line: 25
+    end_line: 37
+    span_sha256: 1ef2ea62a8ecd8534e655a31663e5da8e209ddeaaaffe6a4b1a383311fe87763
+  expected_label: confirmed
+  ambiguity: none
+- id: A01
+  kind: business_rule
+  critical: true
+  statement: A "partner" customer gets a discount on the line total. Part of the logic sits in the pricing
+    service (10 percent, used when the partner flag is set) and part in a helper class selected by a property
+    `pricing.legacy.partner` (default "false"; the helper gives 12 percent). Nothing says which one wins
+    in production. Both places must exist in code.
+  identifiers:
+  - PARTNER_RATE
+  - partnerDiscount
+  - OLD_RATE
+  - discountFor
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 30
+    end_line: 30
+    span_sha256: a7a899e91fc3f4a876467d84b8e1e526d12e990f7fb2ab32b9aa8122568ffad4
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 130
+    end_line: 138
+    span_sha256: 8cceff8c6ea35ceb567f95ee9ee2016a8fcfaf70f3cc4181e96a10ad075b632a
+  - path: src/main/java/org/example/harbour/legacy/LegacyPartnerPricing.java
+    start_line: 12
+    end_line: 12
+    span_sha256: a7b140a474579988a62328b6bea249c66f598469f95d5aaaecbbda3d824a2dca
+  - path: src/main/java/org/example/harbour/legacy/LegacyPartnerPricing.java
+    start_line: 17
+    end_line: 23
+    span_sha256: eb41afa1abb1cd7ba72911eefc8f9b03eaca2e892e10fb54f35929d13574db5a
+  expected_label: inferred
+  ambiguity: split_logic
+- id: A02
+  kind: business_rule
+  critical: true
+  statement: Orders above a limit need manager approval. A comment says "5,000", the constant in code
+    is `50000`, and the code also reads an optional property `order.approval.limit` that is NOT in `harbour.properties`.
+    Nobody can tell the real limit in production.
+  identifiers:
+  - APPROVAL_LIMIT
+  - needsManagerApproval
+  spans:
+  - path: src/main/java/org/example/harbour/order/OrderApprovalPolicy.java
+    start_line: 16
+    end_line: 16
+    span_sha256: 2ba4cd05416e1204ecd4a7af3bffe4429226d7338e77fd13e91e1d3f3ab547ea
+  - path: src/main/java/org/example/harbour/order/OrderApprovalPolicy.java
+    start_line: 21
+    end_line: 32
+    span_sha256: 1ce0e758692c32d4ab19bdc2c768505d282824c9771c76d6d8176efb32471aab
+  expected_label: gap
+  ambiguity: conflicting_comment
+- id: A03
+  kind: calculation
+  critical: true
+  statement: An express shipping surcharge of 12.50 sits in a branch that runs only when the system property
+    `legacy.express` is "on". Nothing in the repository sets it.
+  identifiers:
+  - expressSurcharge
+  - EXPRESS_SURCHARGE
+  spans:
+  - path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+    start_line: 79
+    end_line: 86
+    span_sha256: af34d903447f3de5bec8d6e64d8c01467b2d4ad1d434418460810b1ea7c5da39
+  - path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+    start_line: 21
+    end_line: 21
+    span_sha256: 4d7bde9d9650d7a1f957737e437ea2c44d5afb6be5383c001cc7c8c7660e3008
+  expected_label: inferred
+  ambiguity: dead_branch
+- id: A04
+  kind: calculation
+  critical: true
+  statement: The tax rounding mode comes from the property `tax.rounding`; if the property is missing,
+    the fallback is HALF_UP. `harbour.properties` has no entry for it, so the live mode depends on the
+    environment.
+  identifiers:
+  - roundTax
+  spans:
+  - path: src/main/java/org/example/harbour/tax/TaxService.java
+    start_line: 66
+    end_line: 70
+    span_sha256: c42d1fe900a3e6ace873216ac8acb4db216f258a0214a5f8339b75d2be94d8aa
+  expected_label: inferred
+  ambiguity: config_dependent
+- id: A05
+  kind: calculation
+  critical: true
+  statement: For customers with group code 7, the net amount of an invoice line is multiplied by 0.9625
+    (a magic number, no comment, no name for group 7).
+  identifiers:
+  - adjustForGroup
+  spans:
+  - path: src/main/java/org/example/harbour/pricing/PricingService.java
+    start_line: 140
+    end_line: 145
+    span_sha256: 83da3595619b9e54a5dffe9b8d19aff182f830daf9dcc9aa29916d59459749b9
+  expected_label: gap
+  ambiguity: undocumented_constant
+decoys:
+- id: D01
+  type: misleading_comment
+  span:
+    path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+    start_line: 19
+    end_line: 21
+    span_sha256: 19d77470e982b26412576a56135f44e99a3faff9c5d0f61c5940b77ebf1b656c
+  note: comment says 2 percent per started 14 days, cap 10 percent, no fee while disputed; code gives
+    1.5 percent per started 30 days, cap 15 percent, no dispute check (rule R08)
+- id: D02
+  type: misleading_comment
+  span:
+    path: src/main/java/org/example/harbour/tax/TaxService.java
+    start_line: 31
+    end_line: 34
+    span_sha256: 03a1ee1f74dca3811b9af6499a6ddcb129e216dbfdcc8564f4e0bfaa1f7e8b87
+  note: comment says books are 5 percent in DE and 19 percent in NL; code gives 7 percent for books in
+    DE and 21 percent in NL (rule R05)
+- id: D03
+  type: dead_code
+  span:
+    path: src/main/java/org/example/harbour/invoice/InvoiceService.java
+    start_line: 144
+    end_line: 157
+    span_sha256: 3c034f95af0336695888af5e2a8ceb23fad1cbc94c2282177726f09f34689126
+  note: private method never called; seasonal rebate 7 percent in December and January, cap 150.00
+- id: D04
+  type: dead_code
+  span:
+    path: src/main/java/org/example/harbour/legacy/LegacyBonusCalc.java
+    start_line: 8
+    end_line: 19
+    span_sha256: b3a269397e9abfe94e4c61c14329eff0b2f2ef158059620c4dfcca8b7d90d938
+  note: whole class never used; year-end bonus 3 percent from 100000 turnover, 1.5 percent from 40000
+- id: D05
+  type: misleading_comment
+  span:
+    path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+    start_line: 55
+    end_line: 58
+    span_sha256: 435c179260fba44cfa235a714802510992816f0202c671e72646435422f8a240
+  note: comment says 5.90/8.90, 1.20 per kg over 20 and free shipping from 200.00; code gives 4.90/7.90,
+    0.90 and 250.00 (rule R18)
+- id: D06
+  type: misleading_comment
+  span:
+    path: src/main/java/org/example/harbour/shipping/ShipDateCalculator.java
+    start_line: 16
+    end_line: 19
+    span_sha256: 2f3a93325c31b789a1ebf2f69c5e44a735fa45b07c6bcb2ec559a91e687c0b7f
+  note: comment says cut-off 16:00 and day-after-next-business-day; code uses 14:00 and next business
+    day (rule R22)
+- id: D07
+  type: dead_code
+  span:
+    path: src/main/java/org/example/harbour/order/OrderService.java
+    start_line: 151
+    end_line: 162
+    span_sha256: 03d3842bc369cde1ee65a91a82fd5d79aa22c900733651dce01ce3b921c535fc
+  note: private rush-order fee method, never called; looks like a pricing rule
+- id: D08
+  type: dead_code
+  span:
+    path: src/main/java/org/example/harbour/inventory/StockService.java
+    start_line: 159
+    end_line: 168
+    span_sha256: c56c61526b9a42fa7bda62acdcf75b30044e386266f5b9fbd0749a1f8a5c7f80
+  note: return-quantity adjustment limits behind if (false), never runs
+- id: D09
+  type: misleading_comment
+  span:
+    path: src/main/java/org/example/harbour/payment/RefundService.java
+    start_line: 16
+    end_line: 19
+    span_sha256: 4979debbd0e62945d880de4517c442182a89ac901bc1bd2fce411944ebe67e21
+  note: comment says approval above 1,000.00 and a 5 percent overrun allowed; code requires approval above
+    500.00 and allows no overrun (rule R34)
+- id: D10
+  type: dead_code
+  span:
+    path: src/main/java/org/example/harbour/security/LoginService.java
+    start_line: 65
+    end_line: 73
+    span_sha256: 32dc476aab792a2e2986179a940de592299a82643a41c154c03a95a339d3746f
+  note: 'lockout after 3 failures for 30 minutes; private method, never called (live rule is R25: 5 failures,
+    15 minutes)'

@@ -1,0 +1,258 @@
+# Scripted commit series (EXL1). Applied in order on top of c00 by scripts/build_legacy_corpus.py.
+# changed = rules whose span text changes; moved = rules whose text is the same but whose lines moved.
+version: 1
+steps:
+- commit: c01
+  patch: patches/c01.patch
+  message: Lower the discount ceiling for orders
+  changed:
+  - rule: R03
+    new_statement: The total discount on a line is capped at 20 percent of the line's gross amount.
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 29
+      end_line: 29
+      span_sha256: 1c650d81f2f448272d12df7584fe007fe567369650369c7d246b904392769076
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 121
+      end_line: 128
+      span_sha256: 57b7632f940f623c7cf8af1cd7c76aa830df59015db1765fdd5971ad95363957
+  moved: []
+  expected_stale:
+  - R03
+- commit: c02
+  patch: patches/c02.patch
+  message: Late fee ceiling to 12 percent
+  changed:
+  - rule: R08
+    new_statement: Late fee is 1.5 percent of the invoice total for each started 30 days after the due
+      date, capped at 12 percent.
+    spans:
+    - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+      start_line: 15
+      end_line: 15
+      span_sha256: bd335a442eba5cb477a8cee9caea5cf26d2c00ea732c548dc4104798dbbf1053
+    - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+      start_line: 16
+      end_line: 16
+      span_sha256: 1218ae6e0f038cba9f7a55665e22ac99e7d67003b5b873c59f64a902450e515e
+    - path: src/main/java/org/example/harbour/invoice/LateFeeCalculator.java
+      start_line: 22
+      end_line: 33
+      span_sha256: 43a95908aba5dd19cd2291c9357d1b6282daf02ec620211b1fdfb40b7513a39b
+  moved: []
+  expected_stale:
+  - R08
+- commit: c03
+  patch: patches/c03.patch
+  message: No cancel once an order is picked
+  changed:
+  - rule: R14
+    new_statement: 'Order states: NEW to CONFIRMED to PICKED to SHIPPED to DELIVERED; cancel (to CANCELLED)
+      is allowed only from NEW or CONFIRMED.'
+    spans:
+    - path: src/main/java/org/example/harbour/order/OrderStateMachine.java
+      start_line: 26
+      end_line: 49
+      span_sha256: 612ed865aa86546c996e414f95461313841724bcc7370da5eeb4286b4b746638
+  moved: []
+  expected_stale:
+  - R14
+- commit: c04
+  patch: patches/c04.patch
+  message: New 5 to 20 kg shipping band price
+  changed:
+  - rule: R18
+    new_statement: 'Shipping cost by chargeable weight: up to 1 kg 4.90; up to 5 kg 7.90; up to 20 kg
+      15.90; above 20 kg 14.90 plus 0.90 for each started kg over 20. Free shipping for domestic (DE)
+      orders with a net total of 250.00 or more.'
+    spans:
+    - path: src/main/java/org/example/harbour/shipping/ShippingCalculator.java
+      start_line: 59
+      end_line: 74
+      span_sha256: e0f7f56d3b631e19bde153e392fb5345ccbec213a4cb2189c36cacd59f5bc3b6
+  moved: []
+  expected_stale:
+  - R18
+- commit: c05
+  patch: patches/c05.patch
+  message: Lock after 3 failed logins
+  changed:
+  - rule: R25
+    new_statement: A user is locked for 15 minutes after 3 failed login attempts.
+    spans:
+    - path: src/main/java/org/example/harbour/security/LoginService.java
+      start_line: 49
+      end_line: 57
+      span_sha256: 78035535072ea03856ae85717fb5513078e3cecc48473c969a7bbacc917ea12f
+  moved: []
+  expected_stale:
+  - R25
+- commit: c06
+  patch: patches/c06.patch
+  message: Cap payment terms at 45 days
+  changed:
+  - rule: R11
+    new_statement: Due date = issue date + customer's payment terms days, at most 45 days; a customer
+      created less than 90 days before the issue date always gets 14 days.
+    spans:
+    - path: src/main/java/org/example/harbour/invoice/DueDateCalculator.java
+      start_line: 16
+      end_line: 26
+      span_sha256: 82d426726d56d566b731957f4c5459093a3b8143f56dae0bc4b0cf23f5799608
+  moved: []
+  expected_stale:
+  - R11
+- commit: c07
+  patch: patches/c07.patch
+  message: Early payment window 14 days
+  changed:
+  - rule: R32
+    new_statement: Early-payment discount of 2 percent when paid within 14 days of the issue date, only
+      if the invoice has no late fee and is not disputed.
+    spans:
+    - path: src/main/java/org/example/harbour/payment/EarlyPaymentDiscount.java
+      start_line: 17
+      end_line: 27
+      span_sha256: 880a85c2e9155a95ec6c0138a58c42dca98334e9b414bfd3e283ce0a06172175
+  moved: []
+  expected_stale:
+  - R32
+- commit: c08
+  patch: patches/c08.patch
+  message: Credit check must stay below the limit
+  changed:
+  - rule: R15
+    new_statement: 'Confirming an order needs a credit check: the customer''s open invoice total plus
+      the order total must stay below the credit limit.'
+    spans:
+    - path: src/main/java/org/example/harbour/order/OrderService.java
+      start_line: 92
+      end_line: 104
+      span_sha256: 955a2e62b00a2d404a52a3a12e598c162cc4aa04eff127217e8fed9c6fa25a0c
+  moved: []
+  expected_stale:
+  - R15
+- commit: c09
+  patch: patches/c09.patch
+  message: Refund approval from 250
+  changed:
+  - rule: R34
+    new_statement: A refund cannot exceed the original paid amount; a refund above 250.00 needs an approval
+      flag.
+    spans:
+    - path: src/main/java/org/example/harbour/payment/RefundService.java
+      start_line: 20
+      end_line: 30
+      span_sha256: 894323136caff9df6b797258fce46a4562e731e922d0316d857fdaa7399e0275
+  moved: []
+  expected_stale:
+  - R34
+- commit: c10
+  patch: patches/c10.patch
+  message: Order lines up to 999 pieces
+  changed:
+  - rule: R13
+    new_statement: An order has 1 to 100 lines; each line quantity is 1 to 999.
+    spans:
+    - path: src/main/java/org/example/harbour/order/OrderValidator.java
+      start_line: 66
+      end_line: 81
+      span_sha256: 540b72e846a1bd4561eb48742ad0555e332e07438ad07f41e23df492432394c7
+  moved: []
+  expected_stale:
+  - R13
+- commit: c11
+  patch: patches/c11.patch
+  message: Add maintenance notes to the pricing service
+  changed: []
+  moved:
+  - rule: R01
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 104
+      end_line: 116
+      span_sha256: 437fe747e92b5c639954eb993ac258cc2be7bd6d1adae89e9a4b84ae54c701ae
+  - rule: R02
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 118
+      end_line: 126
+      span_sha256: 11085a6ebc5ef82d90737b3ba98926641c3cca1defec606fb7b8df1a87fa45cd
+  - rule: R03
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 36
+      end_line: 36
+      span_sha256: 1c650d81f2f448272d12df7584fe007fe567369650369c7d246b904392769076
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 128
+      end_line: 135
+      span_sha256: 57b7632f940f623c7cf8af1cd7c76aa830df59015db1765fdd5971ad95363957
+  - rule: A01
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 37
+      end_line: 37
+      span_sha256: a7a899e91fc3f4a876467d84b8e1e526d12e990f7fb2ab32b9aa8122568ffad4
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 137
+      end_line: 145
+      span_sha256: 8cceff8c6ea35ceb567f95ee9ee2016a8fcfaf70f3cc4181e96a10ad075b632a
+    - path: src/main/java/org/example/harbour/legacy/LegacyPartnerPricing.java
+      start_line: 12
+      end_line: 12
+      span_sha256: a7b140a474579988a62328b6bea249c66f598469f95d5aaaecbbda3d824a2dca
+    - path: src/main/java/org/example/harbour/legacy/LegacyPartnerPricing.java
+      start_line: 17
+      end_line: 23
+      span_sha256: eb41afa1abb1cd7ba72911eefc8f9b03eaca2e892e10fb54f35929d13574db5a
+  - rule: A05
+    spans:
+    - path: src/main/java/org/example/harbour/pricing/PricingService.java
+      start_line: 147
+      end_line: 152
+      span_sha256: 83da3595619b9e54a5dffe9b8d19aff182f830daf9dcc9aa29916d59459749b9
+  expected_stale: []
+- commit: c12
+  patch: patches/c12.patch
+  message: Add maintenance notes to the stock service
+  changed: []
+  moved:
+  - rule: R16
+    spans:
+    - path: src/main/java/org/example/harbour/inventory/StockService.java
+      start_line: 46
+      end_line: 60
+      span_sha256: 7abb0393cee09f9b3e96dd6875cf5852a96d6b4d065efb8ba2899d7112c960bc
+  - rule: R17
+    spans:
+    - path: src/main/java/org/example/harbour/inventory/StockService.java
+      start_line: 65
+      end_line: 100
+      span_sha256: ad71a4d9acf73602de7ff5f79d7c040923b866c7fa764d40beaa91daf5c87db8
+    - path: src/main/java/org/example/harbour/inventory/StockService.java
+      start_line: 105
+      end_line: 111
+      span_sha256: a425036cac9a05bc40eb71099332efc7b0083503db36b7678f57434c83598460
+    - path: src/main/java/org/example/harbour/inventory/StockService.java
+      start_line: 116
+      end_line: 139
+      span_sha256: 309cf8a58d7a0349f390f13b6df1674f3d6fa61d614c6c4245d3f0d773f56efb
+    - path: src/main/java/org/example/harbour/inventory/StockService.java
+      start_line: 34
+      end_line: 34
+      span_sha256: 7c5b4085277078936a7c7d16d4fdfa195d384344420a54bbf77b7f715f73374b
+  expected_stale: []
+- commit: c13
+  patch: patches/c13.patch
+  message: Add maintenance notes to the invoice service
+  changed: []
+  moved:
+  - rule: R07
+    spans:
+    - path: src/main/java/org/example/harbour/invoice/InvoiceService.java
+      start_line: 94
+      end_line: 101
+      span_sha256: 28b362b36214b13d9df0b92519d1000b0967441047de8e19756d3c71b683b707
+  expected_stale: []

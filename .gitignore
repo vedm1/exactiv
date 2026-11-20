@@ -12,3 +12,4 @@ ui/dist/
 .DS_Store
 site/dist/
 site/build/
+.cache/
