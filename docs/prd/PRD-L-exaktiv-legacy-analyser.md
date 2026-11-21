@@ -596,12 +596,15 @@ Business stages:
 | 20 Nov 2026 | PRD changes approved: corrected positioning, tiered review with published precision, stale findings, scale design | User |
 | 20 Nov 2026 | Earlier LangGraph analyser build: start clean. No earlier code enters the repository (EXL0 record) | User |
 | 20 Nov 2026 | Model route for build and test: Claude through the Anthropic API, synthetic and public code only. Claude through OpenRouter EU for production, after all build phases are done. This replaces the Bedrock EU and Mistral EU proposal in section 8.5 until EXL5 or EXL14 confirms data terms and L-G14 | User |
+| 21 Nov 2026 | OpenRouter EU terms agreed and signed. Retention and region details are read from the signed terms in EXL5 or EXL14 | User |
+| 21 Nov 2026 | Region allowlist (EU region): tenant runs may call `eu.openrouter.ai` only; the gateway refuses any other host, with no fallback (G7). The OpenRouter region "Europe" covers the EU/EEA, the UK and Switzerland: the user accepts this scope. The security pack states it. `api.anthropic.com` is allowed for build and test only, on synthetic and public data (G8). EXL14 keeps the list in config | User |
+| 21 Nov 2026 | L-G14 reading: "provider" means the upstream model vendor, not the gateway. OpenRouter is one shared sub-processor for S4 and S5: the user accepts the risk that one router outage or term change hits both. Enforcement: each request pins the vendor (`provider.only`), sets `allow_fallbacks: false` and `zdr: true`; the run records the vendor from each response and fails if the S5 vendor equals the S4 vendor | User |
 
 ## 20. Open questions
 
 | Item | Blocks | Proposal |
 |---|---|---|
-| EU primary and cross-check model routes, with data terms | EXL2, EXL5 | Bedrock EU (Claude) plus Mistral EU with zero data retention. Record in the endpoint register |
+| EU primary and cross-check model routes | EXL5, EXL14 | ✅ Route decided 20 Nov 2026, terms signed 21 Nov 2026, L-G14 reading decided 21 Nov 2026 (section 19). Still to do in EXL5 or EXL14: record the signed terms in the endpoint register and choose the S5 vendor |
 | Default retention for client code after handover | EXL7-p2 | 30 days, set per contract |
 | First client's languages, build tools and git host | EXL11, EXL13 | Ask on the discovery call. Java and Kotlin first |
 | Do we show the probe output to a prospect before the demo gate? | EXL2 | Yes, privately, labelled as a prototype on public or synthetic code |
@@ -611,7 +614,7 @@ Business stages:
 | Who reviews in continuous mode: Exaktiv or the client's engineers | EXL13, pricing | Offer both; price the retainer by who reviews |
 | Billing unit for the analyser under G5 | EXK10, pricing | "Lines under analysis per month" for the platform fee |
 | Key vault: encrypted Postgres columns or OpenBao | EXL14 | Choose in the EXL14 spec; licence check (G12) |
-| Region allowlist of provider endpoints per region | EXL14 | Start with Bedrock EU regions and the Mistral EU endpoint; extend per client |
+| ~~Region allowlist of provider endpoints per region~~ | EXL14 | ✅ Decided 21 Nov 2026: `eu.openrouter.ai` only for the EU region, scope Europe (EU/EEA, UK, Switzerland). Section 19 |
 | Public demo (one public repository, one module) | Deferred | Revisit with public self-serve |
 
 ## Sources
