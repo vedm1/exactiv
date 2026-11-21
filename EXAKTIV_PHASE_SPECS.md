@@ -945,8 +945,44 @@ Source: `docs/prd/PRD-L-exaktiv-legacy-analyser.md` (v0.4, approved 20 Nov 2026)
 ## EXL2 — Legacy probe
 
 **Objective**: Real numbers before the build: tokens per line, invalid-citation rate, precision on seeded rules.
-**Prerequisites**: EXL1 ✅; one EU model route available.
+**Prerequisites**: EXL1 ✅; one model route. Changed 20 Nov 2026 (user): Claude through the Anthropic API for all build and test work (synthetic and public code only); Claude through OpenRouter EU only after all build phases are done.
 **Rough scope**: time-boxed to 5 working days; probe code not merged; results into implementation notes here.
+
+### Implementation notes (EXL2, 20 Nov 2026)
+
+**Setup.** Probe code lives in `.cache/exl2-probe/` (git-ignored, own `pyproject.toml`, so `uv.lock` is unchanged). It reuses `exaktiv_core.legacy_corpus`. 26 probe tests: V1, V2, V4, V5, V6, L-G1, L-G3, G3 (no digits in prompt files), path allowlist, key redaction, budget guard, facts coverage, scoring, V8. Model: `claude-sonnet-5-5`, price $2 / $10 per million tokens from the cached claude-api reference (2026-11-03), not the live price page: check it before the cost decision is final. Key from Doppler `exaktiv` / `dev`. Spend $17.85 of the $40 cap (synthetic runs and re-judges about $6.5, PetClinic $0.6, OFBiz slice $1.5, full OFBiz $10.5, S3 explain $0.5).
+
+**API facts found.** Sonnet 5.5 rejects forced `tool_choice` and a non-default temperature, so the probe uses structured outputs (`output_config.format`), which needs `additionalProperties: false` on every object. The judge must use a structured verdict too: asked for "one word", the model wrote prose.
+
+**Results** (Wilson 95% intervals; judge = same model family, see D7):
+
+| Set | Lines sent | Raw / verified statements | Precision (judged) | Invalid citation (V1, V2, V4) | Extract in / out tokens per line | Source tokens per line | $ per 1,000 lines (extract) |
+|---|---|---|---|---|---|---|---|
+| Synthetic, prompt v1 | 6,696 | 316 / 305 | 268/305 = 88% (84–91%) | 6/316 = 1.9% (0.9–4.1%) | 32.2 / 7.2 | 11.3 | 0.137 |
+| Synthetic, prompt v2 | 6,696 | 271 / 257 | 227/257 = 88% (84–92%) | 6/271 = 2.2% (1.0–4.7%) | 34.3 / 7.7 | 11.3 | 0.146 |
+| PetClinic (main code), v2 | 1,929 | 62 / 57 | 54/57 = 95% (86–98%) | 2/62 | 32.6 / 5.8 | 12.3 | 0.124 |
+| OFBiz subset, all files outside `/test/`, v2 | 95,835 | 1,552 / 1,326 | 130/150 (sample) = 87% (80–91%) | 28/1,552 = 1.8% (1.3–2.6%) | 30.0 / 4.3 | 17.6 | 0.103 |
+
+- **Seeded rules (synthetic, v2).** Recall of the 40 clear rules: 29/40 (72%, CI 57–84%) when one statement must match the key; 34/40 (85%) when the key is compared with all verified statements that overlap its lines (union). v1: 22/40 and 28/40. The 5 ambiguous rules: 0 equivalent, 4 partial, 1 different (none is "confirmed": the probe never sets that label, so this is not a test of L-G3 on real model output). The demo gate asks 90% precision and 80% recall: recall passes by union, precision does not yet (interval 84–92%).
+- **Decoys (v2).** No misleading comment was followed. Both statements that touch a dead-code decoy (D04, D08) say the code is unused or never runs. The "no caller found by name" fact in the user message (tree-sitter) did this, not a rule in the prompt.
+- **Read multiplier** (input tokens / source tokens, extract only): 2.7–3.0 on small sets, 1.7 on OFBiz. S3 explain alone costs 16.6 in / 4.4 out tokens per line ($0.077 per 1,000 lines) on the synthetic corpus.
+- **Tree-sitter.** 0 parse errors in all three sets. 0.009–0.013 s per 1,000 lines.
+- **V8 re-anchor** (hash plus symbol name, no model): 13 commits, 0 false stale marks, 0 missed stale marks, including the 3 move-only commits.
+- **SCIP spike failed.** scip-java image `sourcegraph/scip-java@sha256:2ad40207c69b0758fc0be783314fbb802232358acd648b5ecc2f870e372ee618` (amd64, 2.7 GB, runs emulated on Apple silicon). Maven in the container could not fetch plugins from Maven Central: PKIX certificate error on this network. Certificate checks were not disabled. In the L-G5 sandbox (no network) any Maven build needs a pre-filled offline repository, including for a project with no dependencies. The tree-sitter edge quality was not compared with SCIP.
+- **Not measured.** Wall-clock time per 1,000 lines (EXL8). The baseline without line numbers (off by default). A second pass for the `confirmed` label (EXL5). The S3 summary effect on S4 (S4 ran with no S3 input).
+
+**Decisions and findings**
+
+- **D1 SCIP.** Not a dependency for EXL3 at first. Build the tree-sitter graph first. Add SCIP as an optional step only with an offline Maven repository in the sandbox, and only after the edge comparison that this spike could not run.
+- **D2 Chunking.** `max_unit_lines` 600 worked: 275 units for OFBiz, 0 failed calls, 0 invalid JSON.
+- **D3 Cost.** S4 extract: $0.10–0.15 per 1,000 lines at $2 / $10. S3 adds about $0.08. An S5 pass costs about as much as S4. So S3 + S4 + S5 are about $0.30–0.40 per 1,000 lines, about $150–200 for 500,000 lines before batch discounts. This is near the PRD-L §15 figure ($120–140), which assumed a higher price and fewer tokens per line. Source code costs 11–18 tokens per line, not 10–12.
+- **D4 S3.** Build S3 only if an EXL5 test shows that its summaries raise S4 precision or recall. S4 alone reached 88%.
+- **D5 For EXL4.** (a) V5 "direct graph neighbour" must include the enclosing classes, the members and field types of the enclosing class, and bean property names from getters. The strict version dropped 31% of valid statements; the widened version drops 1–11%, and invented names still drop (tests). (b) V3 always passes on a new statement, because the verifier computes the span hash from the original; it matters only for stale detection. (c) Limits belong in config: one statement per rule needs 800 characters (400 failed V6 on 24 statements), and OFBiz methods need spans up to 120 lines (60 dropped 16% of statements by V2). (d) Without a verifier the invalid-citation rate was only about 2% with numbered lines on this model. The verifier's main work is V5 and the stale logic. The sales claim "baseline invalid citations" needs these numbers, not a larger one.
+- **D6 Route.** Anthropic API for build and test; OpenRouter EU for production later. Open: OpenRouter EU data terms and zero data retention, and L-G14 (S5 on a different provider) when both routes sit behind one router. EXL5 or EXL14 decides it. G7 does not hold on the Anthropic route; the probe refuses any path outside the synthetic and public sets.
+- **D7 Judge.** The judge is Claude. The first "equivalent" prompt was too strict (it called correct statements "partial"); it was changed once, to "B has every condition and value of A", after reading six pairs. Figures above use the changed prompt. **A human check of 20 judge verdicts is open** (`.cache/exl2-probe/out/judge_check.md`). Until then, precision and recall are judge-based. Judge noise: the same statements gave 240, 241 and 238 true verdicts on three runs of one set.
+- **Prompt versions.** v1 (`prompt_extract_v1.txt`) and v2 (one statement per rule, every condition and value, plus the unused-code fact). v2 has fewer, longer statements and higher recall by union (34 vs 28). Precision is the same.
+- **Tool note.** The `spent_this_run` field in the probe metrics is wrong for re-judge runs; `spent_total` is correct.
+- **Private sample.** `.cache/exl2-probe/out/sample_report.md`: 16 cited statements for the pricing module, labelled "Prototype output on synthetic code", commit `0c35f28203`.
 
 ## EXL3 — Snapshot ingest and code facts
 

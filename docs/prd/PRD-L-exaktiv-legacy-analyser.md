@@ -485,7 +485,9 @@ On the scripted commit series of the synthetic repository:
 
 - Re-run the baseline every month (as EXK7). A drop of more than 1 point in precision blocks a route or prompt change (G10).
 
-## 15. Cost estimate (to confirm in EXL2)
+## 15. Cost estimate (first measured in EXL2, 20 Nov 2026)
+
+- **EXL2 result.** At $2 / $10 per million tokens (Claude Sonnet 5.5): S4 extract $0.10–0.15 per 1,000 lines, S3 explain about $0.08, S5 about as much as S4. Source code costs 11–18 tokens per line. See the EXL2 notes in `EXAKTIV_PHASE_SPECS.md`. The figures below are the earlier assumption.
 
 - **Who pays.** With BYOK (default) the client pays the model cost to its provider. The figures below are for the cost estimate the UI shows, and for the managed-models add-on.
 - **First run, model cost.** Assumption: about 10 to 12 tokens per line of Java, and about 4 to 5 reads of each line across S3 to S5 with context. At an assumed list price of 3 US dollars per million input tokens and 15 per million output tokens: about 120 to 140 US dollars for 500,000 lines, and about 1,200 to 1,400 US dollars for 5 million lines, before batch discounts.
@@ -593,6 +595,7 @@ Business stages:
 | 20 Nov 2026 | Public self-serve sign-up deferred. The team sets up each organisation and engagement | User |
 | 20 Nov 2026 | PRD changes approved: corrected positioning, tiered review with published precision, stale findings, scale design | User |
 | 20 Nov 2026 | Earlier LangGraph analyser build: start clean. No earlier code enters the repository (EXL0 record) | User |
+| 20 Nov 2026 | Model route for build and test: Claude through the Anthropic API, synthetic and public code only. Claude through OpenRouter EU for production, after all build phases are done. This replaces the Bedrock EU and Mistral EU proposal in section 8.5 until EXL5 or EXL14 confirms data terms and L-G14 | User |
 
 ## 20. Open questions
 

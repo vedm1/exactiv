@@ -204,7 +204,7 @@ EXD1 (the brand package) is done. EXD2 puts the tokens, fonts and the `check_bra
 | Employment contract check before the public launch | EXW3 | 🔲 Open **EXW3 19 Nov 2026**: risk accepted by the user. The site names no person, and the company name stands on one privacy-notice line only. |
 | First client contract close (trigger for the legal notice) | EXW4 | 🔲 Open |
 | Earlier LangGraph legacy-analyser build: location, and whether it is personal work made outside employment. Decided inside EXL0 | EXL1 | ✅ Decided 20 Nov 2026 (EXL0): start clean, no earlier analyser code. See `docs/decisions/EXL0-record.md` |
-| EU model routes for the analyser (S3, S4, S5 cross-check on different providers), data terms, region allowlist | EXL2, EXL5, EXL14 | 🔲 Open. Proposal: Claude through Bedrock EU and Mistral EU with zero data retention |
+| EU model routes for the analyser (S3, S4, S5 cross-check on different providers), data terms, region allowlist | EXL2, EXL5, EXL14 | 🔲 Partly decided 20 Nov 2026 (user): Anthropic API for build and test (synthetic and public code only); Claude through OpenRouter EU for production after all build phases. Open: OpenRouter EU data terms and zero data retention, region allowlist, and how L-G14 (S5 on a different provider) works behind one router. EXL2 measured the numbers (see its notes) |
 | Key vault for client provider keys: encrypted Postgres columns or OpenBao | EXL14 | 🔲 Open |
 | Billing unit for the analyser under G5 | EXK10, pricing | 🔲 Open. Proposal: lines under analysis per month |
 | Claim `findings-sourced` for the EXW3 launch: EXL7-p1 passes first, or the claim leaves the launch pages | EXW3 | 🔲 Open |

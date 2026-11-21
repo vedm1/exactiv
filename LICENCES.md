@@ -29,6 +29,9 @@ Record each model and dataset here before first use. Base models: Apache 2.0 or 
 |---------|---------|---------|--------|-----|------------|
 | DBOS Transact | 3.6.0 | MIT | https://github.com/dbos-inc/dbos-transact-py | Workflow engine in `services/worker`. State in our Postgres (schema `dbos`). No Conductor, no cloud service. | 20 Nov 2026 |
 | psycopg and psycopg-binary | 3.3.9 | LGPL-3.0-only | https://github.com/psycopg/psycopg | Required by DBOS (and used by `/health`). Unmodified, used as a library through import, not distributed. Exception in `config/licence_exceptions.yaml`. | 20 Nov 2026 |
+| tree-sitter and tree-sitter-java | 0.26.1 and 0.23.5 | MIT (per upstream package metadata; LICENSE files not re-read) | https://github.com/tree-sitter/tree-sitter | EXL2 probe only (git-ignored, not in the workspace). EXL3 records the licence check before use in a product package. | 20 Nov 2026 |
+| anthropic (Python SDK) | 2.12.0 | MIT (per package metadata; LICENSE not re-read) | https://github.com/anthropics/anthropic-sdk-python | EXL2 probe only. | 20 Nov 2026 |
+| scip-java image | `sha256:2ad40207…e372ee618` | Apache-2.0 per PRD-L §5 (upstream LICENSE not read in EXL2) | https://github.com/sourcegraph/scip-java | EXL2 spike only (failed). EXL3 checks the licence before any use. | 20 Nov 2026 |
 
 AGPL-3.0 note: Exaktiv runs MinIO unmodified for its own internal use. It does not distribute MinIO and does not offer it as a network service to others. If we ever modify MinIO, or expose it to customers, record a new review here first.
 
